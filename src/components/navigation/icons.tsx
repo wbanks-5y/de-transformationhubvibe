@@ -1,0 +1,97 @@
+
+import {
+  LayoutDashboard,
+  FileText,
+  Calendar,
+  Settings,
+  Building2,
+  Factory,
+  ShoppingCart,
+  Truck,
+  Headphones,
+  User,
+  TrendingUp,
+  Lightbulb,
+  Shield,
+  Activity,
+  Coins,
+  Package,
+  Wallet,
+  ClipboardList,
+  ClipboardCheck,
+  ClipboardCopy,
+  CircleDollarSign,
+  CreditCard,
+  Users,
+  Target,
+  Zap,
+  Gauge,
+  MoreHorizontal,
+  BarChart3,
+  PieChart,
+  LineChart,
+  DollarSign
+} from "lucide-react";
+
+// We need to create proper elements with the icons to satisfy TypeScript
+export const NavIcons = {
+  Home: LayoutDashboard,
+  FileText: FileText,
+  Calendar: Calendar,
+  Settings: Settings,
+  Building: Building2,
+  Factory: Factory,
+  ShoppingCart: ShoppingCart,
+  Truck: Truck,
+  Headphones: Headphones,
+  User: User,
+  TrendingUp: TrendingUp,
+  Lightbulb: Lightbulb,
+  Shield: Shield,
+  Activity: Activity,
+  Coins: Coins,
+  Package: Package,
+  Wallet: Wallet,
+  ClipboardList: ClipboardList,
+  ClipboardCheck: ClipboardCheck,
+  ClipboardCopy: ClipboardCopy,
+  
+  // Cockpit specific icons - Updated to use Gauge which better represents a dashboard/cockpit
+  FinanceCockpit: Gauge,
+  SupplyChain: Truck,
+  CreditControl: CreditCard,
+  ProcurementCockpit: Package,
+  Manufacturing: Factory,
+  SalesCockpit: TrendingUp,
+  Warehouse: Package,
+  FieldService: Headphones,
+  Customer: Users,
+  ProjectManagement: ClipboardList,
+  Projects: ClipboardList, // Added this missing icon reference
+  
+  // Health specific icons
+  Health: Activity,
+  Sales: TrendingUp,
+  Finance: CircleDollarSign,
+  Procurement: ShoppingCart,
+  FixedAssets: Building2,
+  CashBank: Wallet,
+  Inventory: Package,
+  Logistics: Truck,
+  
+  // Other sections
+  Strategy: Target,
+  Insights: Lightbulb,
+  ProcessIntelligence: Activity,
+  Myles: Zap,
+  More: MoreHorizontal,
+  
+  // Additional icons for cockpit configuration
+  Gauge: Gauge,
+  Building2: Building2,
+  Users: Users,
+  DollarSign: DollarSign,
+  BarChart3: BarChart3,
+  PieChart: PieChart,
+  LineChart: LineChart
+};

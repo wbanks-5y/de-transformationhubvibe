@@ -1,22 +1,19 @@
-# Welcome to your Lovable project
+
+# Business Transformation Hub
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/5188827c-9d38-457b-9329-309655c95929
+**Developed by**: 5Y Technology Ltd  
+**Developer**: Paul Saxton  
+**URL**: https://d6ca7123-04d2-42f6-9c82-0b74b40d6203.lovableproject.com
 
 ## How can I edit this code?
 
 There are several ways of editing your application.
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/5188827c-9d38-457b-9329-309655c95929) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
 **Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+If you want to work locally using your own IDE, you can clone this repo and push changes.
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -59,15 +56,16 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- Supabase
 
-## How can I deploy this project?
+## Development
 
-Simply open [Lovable](https://lovable.dev/projects/5188827c-9d38-457b-9329-309655c95929) and click on Share -> Publish.
+Developed by **5Y Technology Ltd**  
+Lead Developer: **Paul Saxton**
 
-## Can I connect a custom domain to my Lovable project?
+## Can I connect a custom domain to my project?
 
-Yes, you can!
+Yes! You can connect a custom domain to your deployed application.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+To connect a domain, navigate to your hosting provider's settings and configure your DNS settings to point to your deployment.
+"# TransformationHub" 

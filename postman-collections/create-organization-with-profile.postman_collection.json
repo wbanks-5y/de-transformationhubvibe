@@ -1,0 +1,220 @@
+{
+  "info": {
+    "name": "Create Organization with Profile",
+    "description": "Collection for testing the create-organization-with-profile edge function. This endpoint creates or updates both organization and company profile data.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Complete Organization",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "apikey",
+            "value": "{{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"organization\": {\n    \"name\": \"TechCorp Inc\",\n    \"supportEmail\": \"support@techcorp.com\",\n    \"tier\": \"professional\",\n    \"domain\": \"techcorp.com\",\n    \"backendUrl\": \"https://api.techcorp.com\",\n    \"status\": \"active\"\n  },\n  \"companyProfile\": {\n    \"industry\": \"Technology\",\n    \"companySize\": \"51-200\",\n    \"headquartersLocation\": \"New York, NY, USA\",\n    \"description\": \"Leading technology company specializing in enterprise solutions\",\n    \"businessModel\": \"SaaS platform providing cloud-based business solutions\",\n    \"targetMarket\": \"Enterprise customers in North America and Europe\",\n    \"keyProducts\": \"Cloud-based project management, CRM, and analytics tools\",\n    \"keyMarkets\": \"North America, Europe, Asia-Pacific\",\n    \"missionStatement\": \"To transform business operations through innovative technology\",\n    \"visionStatement\": \"Leading the digital transformation of enterprises worldwide\",\n    \"coreValues\": \"Innovation, Integrity, Customer Success, Excellence\",\n    \"organizationalStructure\": \"Matrix organization with product and regional divisions\",\n    \"strategicPriorities\": \"Market expansion, Product innovation, Customer satisfaction\",\n    \"competitiveAdvantages\": \"Advanced AI technology, Strong customer relationships, Scalable platform\",\n    \"currentChallenges\": \"Increasing market competition, Talent acquisition, Rapid technology changes\",\n    \"financialYearEnd\": \"December 31\"\n  }\n}"
+        },
+        "url": {
+          "raw": "https://gvrxydwedhppmvppqwwm.supabase.co/functions/v1/create-organization-with-profile",
+          "protocol": "https",
+          "host": [
+            "gvrxydwedhppmvppqwwm",
+            "supabase",
+            "co"
+          ],
+          "path": [
+            "functions",
+            "v1",
+            "create-organization-with-profile"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Organization with Partial Data",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "apikey",
+            "value": "{{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"organization\": {\n    \"name\": \"StartupCo\",\n    \"supportEmail\": \"hello@startupco.com\",\n    \"tier\": \"essential\",\n    \"status\": \"active\"\n  },\n  \"companyProfile\": {\n    \"industry\": \"Technology\",\n    \"companySize\": \"1-10\",\n    \"description\": \"An innovative startup\",\n    \"missionStatement\": \"To disrupt the industry\"\n  }\n}"
+        },
+        "url": {
+          "raw": "https://gvrxydwedhppmvppqwwm.supabase.co/functions/v1/create-organization-with-profile",
+          "protocol": "https",
+          "host": [
+            "gvrxydwedhppmvppqwwm",
+            "supabase",
+            "co"
+          ],
+          "path": [
+            "functions",
+            "v1",
+            "create-organization-with-profile"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Update Organization with Null Fields",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "apikey",
+            "value": "{{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"organization\": {\n    \"name\": \"TechCorp Inc\",\n    \"supportEmail\": \"newsupport@techcorp.com\",\n    \"tier\": \"enterprise\",\n    \"domain\": null,\n    \"backendUrl\": \"\",\n    \"status\": \"active\"\n  },\n  \"companyProfile\": {\n    \"industry\": \"Technology & Software\",\n    \"companySize\": \"201-500\",\n    \"headquartersLocation\": null,\n    \"description\": \"\",\n    \"strategicPriorities\": \"Global expansion, AI integration, Customer retention\"\n  }\n}"
+        },
+        "url": {
+          "raw": "https://gvrxydwedhppmvppqwwm.supabase.co/functions/v1/create-organization-with-profile",
+          "protocol": "https",
+          "host": [
+            "gvrxydwedhppmvppqwwm",
+            "supabase",
+            "co"
+          ],
+          "path": [
+            "functions",
+            "v1",
+            "create-organization-with-profile"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Minimal Organization Creation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "apikey",
+            "value": "{{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"organization\": {\n    \"name\": \"MinimalOrg\"\n  },\n  \"companyProfile\": {}\n}"
+        },
+        "url": {
+          "raw": "https://gvrxydwedhppmvppqwwm.supabase.co/functions/v1/create-organization-with-profile",
+          "protocol": "https",
+          "host": [
+            "gvrxydwedhppmvppqwwm",
+            "supabase",
+            "co"
+          ],
+          "path": [
+            "functions",
+            "v1",
+            "create-organization-with-profile"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Error: Missing Organization Name",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "apikey",
+            "value": "{{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"organization\": {\n    \"supportEmail\": \"test@example.com\"\n  },\n  \"companyProfile\": {\n    \"industry\": \"Technology\"\n  }\n}"
+        },
+        "url": {
+          "raw": "https://gvrxydwedhppmvppqwwm.supabase.co/functions/v1/create-organization-with-profile",
+          "protocol": "https",
+          "host": [
+            "gvrxydwedhppmvppqwwm",
+            "supabase",
+            "co"
+          ],
+          "path": [
+            "functions",
+            "v1",
+            "create-organization-with-profile"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "SUPABASE_ANON_KEY",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2cnh5ZHdlZGhwcG12cHBxd3dtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1MDk2MjQsImV4cCI6MjA3NDA4NTYyNH0.PmyU_j94vVwvumJS8GfIHxKPe5ntLUpyqJXzkBEFO_o"
+    }
+  ]
+}

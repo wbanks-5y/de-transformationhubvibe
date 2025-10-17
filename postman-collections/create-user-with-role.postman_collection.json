@@ -1,0 +1,243 @@
+{
+  "info": {
+    "name": "Create User With Role",
+    "description": "Test collection for the create-user-with-role edge function",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Admin User (Enterprise Tier)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "apikey",
+            "value": "{{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"role\": \"admin\",\n  \"tier\": \"enterprise\",\n  \"userData\": {\n    \"full_name\": \"Admin User\",\n    \"company\": \"TechCorp Inc\",\n    \"job_title\": \"System Administrator\",\n    \"phone\": \"+1234567890\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{SUPABASE_URL}}/functions/v1/create-user-with-role",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["functions", "v1", "create-user-with-role"]
+        }
+      }
+    },
+    {
+      "name": "Create User (Professional Tier)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "apikey",
+            "value": "{{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user-pro@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"role\": \"user\",\n  \"tier\": \"professional\",\n  \"userData\": {\n    \"full_name\": \"John Professional\",\n    \"company\": \"Operations Inc\",\n    \"job_title\": \"Operations Analyst\",\n    \"phone\": \"+1234567891\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{SUPABASE_URL}}/functions/v1/create-user-with-role",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["functions", "v1", "create-user-with-role"]
+        }
+      }
+    },
+    {
+      "name": "Create Basic User (Essential Tier - Default)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "apikey",
+            "value": "{{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"role\": \"user\",\n  \"userData\": {\n    \"full_name\": \"Jane User\",\n    \"company\": \"Standard Corp\",\n    \"job_title\": \"Analyst\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{SUPABASE_URL}}/functions/v1/create-user-with-role",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["functions", "v1", "create-user-with-role"]
+        }
+      }
+    },
+    {
+      "name": "Create User - Minimal Data",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "apikey",
+            "value": "{{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"minimal@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"role\": \"user\"\n}"
+        },
+        "url": {
+          "raw": "{{SUPABASE_URL}}/functions/v1/create-user-with-role",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["functions", "v1", "create-user-with-role"]
+        }
+      }
+    },
+    {
+      "name": "Error - Invalid Role (Manager no longer exists)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "apikey",
+            "value": "{{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"error@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"role\": \"manager\",\n  \"userData\": {\n    \"full_name\": \"Error Test - Manager role no longer exists\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{SUPABASE_URL}}/functions/v1/create-user-with-role",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["functions", "v1", "create-user-with-role"]
+        }
+      }
+    },
+    {
+      "name": "Error - Missing Required Fields",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "apikey",
+            "value": "{{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"incomplete@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{SUPABASE_URL}}/functions/v1/create-user-with-role",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["functions", "v1", "create-user-with-role"]
+        }
+      }
+    },
+    {
+        "name": "Create Admin with Essential Tier (Admin role + basic license)",
+        "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "apikey",
+            "value": "{{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{SUPABASE_ANON_KEY}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin-essential@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"role\": \"admin\",\n  \"tier\": \"essential\",\n  \"userData\": {\n    \"full_name\": \"Admin with Essential\",\n    \"company\": \"Small Business\",\n    \"job_title\": \"Owner\",\n    \"phone\": \"+1234567892\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{SUPABASE_URL}}/functions/v1/create-user-with-role",
+          "host": ["{{SUPABASE_URL}}"],
+          "path": ["functions", "v1", "create-user-with-role"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "SUPABASE_URL",
+      "value": "https://gvrxydwedhppmvppqwwm.supabase.co"
+    },
+    {
+      "key": "SUPABASE_ANON_KEY",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2cnh5ZHdlZGhwcG12cHBxd3dtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1MDk2MjQsImV4cCI6MjA3NDA4NTYyNH0.PmyU_j94vVwvumJS8GfIHxKPe5ntLUpyqJXzkBEFO_o"
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "info": {
+    "name": "Admin User Creation with Notification",
+    "description": "Collection for testing both admin user creation edge functions",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Admin User (Original)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"userData\": {\n    \"full_name\": \"Original Admin User\",\n    \"first_name\": \"Original\",\n    \"last_name\": \"Admin\",\n    \"phone\": \"+1234567890\",\n    \"department\": \"IT\",\n    \"job_title\": \"System Administrator\",\n    \"company\": \"TechCorp Inc\"\n  }\n}"
+        },
+        "url": {
+          "raw": "https://gvrxydwedhppmvppqwwm.supabase.co/functions/v1/create-admin-user",
+          "protocol": "https",
+          "host": [
+            "gvrxydwedhppmvppqwwm",
+            "supabase",
+            "co"
+          ],
+          "path": [
+            "functions",
+            "v1",
+            "create-admin-user"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Admin User with Notification",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"comprehensive@example.com\",\n  \"userData\": {\n    \"full_name\": \"Comprehensive Admin User\",\n    \"first_name\": \"Comprehensive\",\n    \"last_name\": \"Admin\",\n    \"phone\": \"+1234567890\",\n    \"department\": \"IT Security\",\n    \"job_title\": \"Security Administrator\",\n    \"company\": \"TechCorp Inc\"\n  },\n  \"sendNotification\": true\n}"
+        },
+        "url": {
+          "raw": "https://gvrxydwedhppmvppqwwm.supabase.co/functions/v1/create-admin-user-with-notification",
+          "protocol": "https",
+          "host": [
+            "gvrxydwedhppmvppqwwm",
+            "supabase",
+            "co"
+          ],
+          "path": [
+            "functions",
+            "v1",
+            "create-admin-user-with-notification"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Admin User without Email Notification",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"minimal@example.com\",\n  \"userData\": {\n    \"full_name\": \"Minimal Admin\",\n    \"job_title\": \"System Administrator\"\n  },\n  \"sendNotification\": false\n}"
+        },
+        "url": {
+          "raw": "https://gvrxydwedhppmvppqwwm.supabase.co/functions/v1/create-admin-user-with-notification",
+          "protocol": "https",
+          "host": [
+            "gvrxydwedhppmvppqwwm",
+            "supabase",
+            "co"
+          ],
+          "path": [
+            "functions",
+            "v1",
+            "create-admin-user-with-notification"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
