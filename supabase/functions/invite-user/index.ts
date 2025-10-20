@@ -8,7 +8,11 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
 };
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const resendApiKey = Deno.env.get("RESEND_API_KEY_V2");
+if (!resendApiKey) {
+  console.warn("RESEND_API_KEY_V2 not found - email sending will fail");
+}
+const resend = new Resend(resendApiKey);
 
 interface InviteUserRequest {
   email: string;
@@ -338,7 +342,14 @@ const handler = async (req: Request): Promise<Response> => {
         });
 
         // Step 3: Send invitation email
+        let emailSent = false;
+        let emailError = null;
+
         try {
+          if (!resendApiKey) {
+            throw new Error("RESEND_API_KEY_V2 is not configured");
+          }
+
           const emailHtml = `
             <!DOCTYPE html>
             <html>
@@ -387,12 +398,17 @@ const handler = async (req: Request): Promise<Response> => {
             html: emailHtml,
           });
 
+          emailSent = true;
           console.log(`[${correlationId}] POST: Invitation email sent successfully`, {
             to: emailNormalized.substring(0, 3) + '***@' + emailNormalized.split('@')[1]
           });
-        } catch (emailError) {
-          console.error(`[${correlationId}] POST: Failed to send invitation email`, emailError);
-          // Don't fail the entire request if email fails - invitation token is still valid
+        } catch (error: any) {
+          emailError = error.message || "Unknown email error";
+          console.error(`[${correlationId}] POST: Failed to send invitation email`, {
+            error: emailError,
+            hasApiKey: !!resendApiKey,
+            errorDetails: error,
+          });
         }
 
         console.log(`[${correlationId}] FUNCTION END: Success`, {
@@ -404,9 +420,12 @@ const handler = async (req: Request): Promise<Response> => {
         return new Response(
           JSON.stringify({
             success: true,
-            message: "Invitation created and email sent successfully",
+            message: emailSent 
+              ? "Invitation created and email sent successfully"
+              : "Invitation created but email failed to send",
             invitationUrl,
-            emailSent: true,
+            emailSent,
+            emailError: emailError || undefined,
             correlationId,
           }),
           {
