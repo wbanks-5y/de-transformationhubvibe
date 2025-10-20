@@ -8,6 +8,7 @@ import StrategyExecutionHeatmap from '@/components/strategy/StrategyExecutionHea
 import InitiativeTracker from '@/components/strategy/InitiativeTracker';
 import BusinessScenarioPlanning from '@/components/strategy/BusinessScenarioPlanning';
 import RiskAssessmentMatrix from '@/components/strategy/RiskAssessmentMatrix';
+import PerformanceTrends from '@/components/strategy/PerformanceTrends';
 import DevelopmentWatermark from '@/components/strategy/DevelopmentWatermark';
 
 // Wrapper component for consistent layout spacing
@@ -79,6 +80,16 @@ const StrategyRoutes: React.FC = () => {
           <ProtectedRoute>
             <BusinessHealthLayout>
               <RiskAssessmentMatrix />
+            </BusinessHealthLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/trends" 
+        element={
+          <ProtectedRoute>
+            <BusinessHealthLayout>
+              <PerformanceTrends />
             </BusinessHealthLayout>
           </ProtectedRoute>
         } 
