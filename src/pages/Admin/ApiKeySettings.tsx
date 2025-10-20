@@ -1,8 +1,8 @@
-
 import React from "react";
 import { Helmet } from "react-helmet";
-import ApiKeyManagement from "@/components/admin/ApiKeyManagement";
 import BackButton from "@/components/ui/back-button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Info } from "lucide-react";
 
 const ApiKeySettings: React.FC = () => {
   return (
@@ -14,13 +14,28 @@ const ApiKeySettings: React.FC = () => {
       <BackButton />
       
       <h1 className="text-2xl font-bold mb-6">API Key Settings</h1>
-      <p className="text-muted-foreground mb-6">
-        Manage the OpenAI API key that is used by all users in the application.
-        This key is stored securely and not accessible to regular users.
-      </p>
       
       <div className="max-w-2xl">
-        <ApiKeyManagement />
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-primary" />
+              External API Key Management
+            </CardTitle>
+            <CardDescription>
+              API keys for this application are managed externally
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              OpenAI API keys and other service credentials are managed through the external user management application. 
+              Please access the user management portal to view or update API keys.
+            </p>
+            <p className="text-sm text-muted-foreground mt-4">
+              This ensures centralized key management and enhanced security across all applications in the system.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
