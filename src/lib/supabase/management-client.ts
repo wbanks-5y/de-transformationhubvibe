@@ -28,7 +28,7 @@ export interface ManagementDatabase {
 }
 
 // Management Database Connection
-const MANAGEMENT_URL = import.meta.env.VITE_MANAGEMENT_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
-const MANAGEMENT_KEY = import.meta.env.VITE_MANAGEMENT_SUPABASE_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const MANAGEMENT_URL = (import.meta.env.VITE_MANAGEMENT_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL) as string;
+const MANAGEMENT_KEY = (import.meta.env.VITE_MANAGEMENT_SUPABASE_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) as string;
 
 export const managementClient = createClient<ManagementDatabase>(MANAGEMENT_URL, MANAGEMENT_KEY);

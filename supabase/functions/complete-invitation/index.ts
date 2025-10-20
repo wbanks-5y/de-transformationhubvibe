@@ -211,16 +211,16 @@ serve(async (req: Request) => {
       // Continue anyway - profile might be created by trigger
     }
 
-    // Step 7: Generate session tokens
-    console.log("[complete-invitation] Generating session tokens");
+    // Step 7: Sign in the user to get session tokens
+    console.log("[complete-invitation] Signing in user");
     
-    const { data: sessionData, error: sessionError } = await orgAdminClient.auth.admin.generateLink({
-      type: "magiclink",
+    const { data: signInData, error: signInError } = await orgAdminClient.auth.signInWithPassword({
       email: email.toLowerCase(),
+      password: password,
     });
 
-    if (sessionError || !sessionData) {
-      console.error("[complete-invitation] Failed to generate session", sessionError);
+    if (signInError || !signInData.session) {
+      console.error("[complete-invitation] Failed to sign in", signInError);
       return new Response(
         JSON.stringify({
           success: false,
@@ -245,8 +245,8 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: true,
-        accessToken: sessionData.properties.access_token,
-        refreshToken: sessionData.properties.refresh_token,
+        accessToken: signInData.session.access_token,
+        refreshToken: signInData.session.refresh_token,
         orgUrl: tokenData.organization_supabase_url,
         orgAnonKey: tokenData.organization_supabase_anon_key,
         userId: userId,
@@ -258,6 +258,7 @@ serve(async (req: Request) => {
     );
   } catch (error) {
     console.error("[complete-invitation] Unexpected error:", error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
       JSON.stringify({
         success: false,

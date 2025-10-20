@@ -5,8 +5,8 @@ import type { Database } from './types';
 // This file is kept for backwards compatibility but is no longer the primary client
 // Use managementClient from @/lib/supabase/management-client for management database
 // Use organizationClient from OrganizationContext for customer databases
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
