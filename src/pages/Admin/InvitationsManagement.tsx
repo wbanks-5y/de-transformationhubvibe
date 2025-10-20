@@ -173,7 +173,7 @@ const InvitationsManagement = () => {
       
       console.log('Invitation response:', data);
       form.reset();
-      toast.success(`Invitation sent to ${values.email}. Click refresh to see it in the list.`);
+      toast.success(`Invitation email sent to ${values.email} successfully!`);
     } catch (error: any) {
       console.error('Invitation error:', error);
       toast.error(error.message || "Failed to send invitation");
