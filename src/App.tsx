@@ -9,6 +9,7 @@ import { OrganizationProvider } from '@/context/OrganizationContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { UserPreferencesProvider } from '@/context/UserPreferencesContext';
 import BootstrapAdminNotification from '@/components/auth/BootstrapAdminNotification';
+import ScrollToTop from '@/components/navigation/ScrollToTop';
 
 const queryClient = new QueryClient();
 
@@ -16,6 +17,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <ScrollToTop />
         <OrganizationProvider>
           <AuthProvider>
             <UserPreferencesProvider>
