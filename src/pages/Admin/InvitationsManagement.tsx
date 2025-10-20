@@ -173,21 +173,7 @@ const InvitationsManagement = () => {
       
       console.log('Invitation response:', data);
       form.reset();
-
-      if (data.emailSent) {
-        toast.success(`Invitation email sent to ${values.email} successfully!`);
-      } else {
-        const transportInfo = data.emailTransport && data.resendStatus 
-          ? ` (transport: ${data.emailTransport}, status: ${data.resendStatus})`
-          : '';
-        toast.warning(`Invitation created for ${values.email}, but email failed to send. ${data.emailError ? 'Error: ' + data.emailError : 'Check server logs for details.'}${transportInfo}`);
-        console.warn('Email sending failed:', { 
-          emailError: data.emailError, 
-          emailTransport: data.emailTransport,
-          resendStatus: data.resendStatus,
-          fullResponse: data 
-        });
-      }
+      toast.success(`Invitation sent to ${values.email}. Click refresh to see it in the list.`);
     } catch (error: any) {
       console.error('Invitation error:', error);
       toast.error(error.message || "Failed to send invitation");

@@ -1,18 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
 };
-
-const resendApiKey = Deno.env.get("RESEND_API_KEY_V2");
-if (!resendApiKey) {
-  console.warn("RESEND_API_KEY_V2 not found - email sending will fail");
-}
-const resend = new Resend(resendApiKey);
 
 interface InviteUserRequest {
   email: string;
@@ -341,153 +334,6 @@ const handler = async (req: Request): Promise<Response> => {
           invitationUrl: invitationUrl.substring(0, 50) + "...",
         });
 
-        // Step 3: Send invitation email
-        let emailSent = false;
-        let emailError = null;
-        let emailTransport = "none";
-        let resendStatus = undefined;
-
-        try {
-          if (!resendApiKey) {
-            throw new Error("RESEND_API_KEY_V2 is not configured");
-          }
-
-          const emailHtml = `
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <meta charset="utf-8">
-                <style>
-                  body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                  .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                  .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-                  .content { background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; }
-                  .button { display: inline-block; padding: 12px 30px; background: #10b981; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
-                  .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
-                </style>
-              </head>
-              <body>
-                <div class="container">
-                  <div class="header">
-                    <h1>🎉 You're Invited!</h1>
-                  </div>
-                  <div class="content">
-                    <h2>Welcome to Transform Hub</h2>
-                    <p>You've been invited to join Transform Hub. Click the button below to accept your invitation and set up your account.</p>
-                    <div style="text-align: center;">
-                      <a href="${invitationUrl}" class="button">Accept Invitation</a>
-                    </div>
-                    <p style="margin-top: 30px; font-size: 14px; color: #666;">
-                      Or copy and paste this link into your browser:<br>
-                      <code style="background: #f4f4f4; padding: 10px; display: block; margin-top: 10px; word-break: break-all;">${invitationUrl}</code>
-                    </p>
-                    <p style="margin-top: 30px; color: #999; font-size: 12px;">
-                      This invitation link will expire in 24 hours.
-                    </p>
-                  </div>
-                  <div class="footer">
-                    <p>© 2025 Transform Hub. All rights reserved.</p>
-                  </div>
-                </div>
-              </body>
-            </html>
-          `;
-
-          console.log(`[${correlationId}] POST: Attempting Resend SDK email send`);
-
-          const { data, error } = await resend.emails.send({
-            from: "Transform Hub <noreply@5ytest.com>",
-            to: [emailNormalized],
-            subject: "You've Been Invited to Transform Hub",
-            html: emailHtml,
-          });
-
-          console.log(`[${correlationId}] POST: Resend SDK response`, {
-            hasData: !!data,
-            dataId: data?.id,
-            hasError: !!error,
-            errorType: typeof error,
-            errorKeys: error ? Object.keys(error) : [],
-            errorJson: error ? JSON.stringify(error) : null,
-          });
-
-          // Check if SDK succeeded
-          if (data?.id && !error) {
-            emailSent = true;
-            emailTransport = "sdk";
-            console.log(`[${correlationId}] POST: Email sent via SDK successfully`, {
-              to: emailNormalized.substring(0, 3) + '***@' + emailNormalized.split('@')[1],
-              emailId: data.id,
-              transport: emailTransport
-            });
-          } else {
-            // SDK failed or returned no ID - try direct fetch
-            console.log(`[${correlationId}] POST: SDK failed, attempting direct Resend API call`);
-            
-            const directResponse = await fetch('https://api.resend.com/emails', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${resendApiKey}`,
-              },
-              body: JSON.stringify({
-                from: "Transform Hub <noreply@5ytest.com>",
-                to: [emailNormalized],
-                subject: "You've Been Invited to Transform Hub",
-                html: emailHtml,
-              }),
-            });
-
-            resendStatus = directResponse.status;
-            const directResponseText = await directResponse.text();
-            
-            console.log(`[${correlationId}] POST: Direct Resend API response`, {
-              status: directResponse.status,
-              statusText: directResponse.statusText,
-              headerNames: Array.from(directResponse.headers.keys()),
-              bodyLength: directResponseText.length,
-              bodyPreview: directResponseText.substring(0, 200),
-            });
-
-            if (directResponse.ok) {
-              try {
-                const directData = JSON.parse(directResponseText);
-                if (directData?.id) {
-                  emailSent = true;
-                  emailTransport = "fetch";
-                  console.log(`[${correlationId}] POST: Email sent via direct fetch successfully`, {
-                    to: emailNormalized.substring(0, 3) + '***@' + emailNormalized.split('@')[1],
-                    emailId: directData.id,
-                    transport: emailTransport,
-                    status: resendStatus
-                  });
-                } else {
-                  emailError = `Resend returned ${directResponse.status} but no email ID`;
-                }
-              } catch (parseError) {
-                emailError = `Resend returned ${directResponse.status} but invalid JSON: ${directResponseText.substring(0, 100)}`;
-              }
-            } else {
-              // Extract error message from response
-              try {
-                const errorData = JSON.parse(directResponseText);
-                emailError = `Resend API error (${directResponse.status}): ${errorData.message || errorData.error || directResponseText.substring(0, 100)}`;
-              } catch {
-                emailError = `Resend API error (${directResponse.status}): ${directResponseText.substring(0, 100)}`;
-              }
-            }
-          }
-        } catch (error: any) {
-          emailError = error.message || (typeof error === 'object' ? JSON.stringify(error).substring(0, 200) : String(error)) || "Unknown email error";
-          console.error(`[${correlationId}] POST: Failed to send invitation email`, {
-            error: emailError,
-            errorType: typeof error,
-            errorConstructor: error?.constructor?.name,
-            hasApiKey: !!resendApiKey,
-            errorDetails: error,
-          });
-        }
-
         console.log(`[${correlationId}] FUNCTION END: Success`, {
           method: 'POST',
           statusCode: 200,
@@ -497,14 +343,8 @@ const handler = async (req: Request): Promise<Response> => {
         return new Response(
           JSON.stringify({
             success: true,
-            message: emailSent 
-              ? "Invitation created and email sent successfully"
-              : "Invitation created but email failed to send",
-            invitationUrl,
-            emailSent,
-            emailError: emailError || undefined,
-            emailTransport,
-            resendStatus,
+            message: "Invitation created successfully",
+            invitationUrl, // Return this URL to Management App for email sending
             correlationId,
           }),
           {
