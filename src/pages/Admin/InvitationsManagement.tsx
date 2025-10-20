@@ -177,8 +177,16 @@ const InvitationsManagement = () => {
       if (data.emailSent) {
         toast.success(`Invitation email sent to ${values.email} successfully!`);
       } else {
-        toast.warning(`Invitation created for ${values.email}, but email failed to send. ${data.emailError ? 'Error: ' + data.emailError : 'Check server logs for details.'}`);
-        console.warn('Email sending failed:', data.emailError);
+        const transportInfo = data.emailTransport && data.resendStatus 
+          ? ` (transport: ${data.emailTransport}, status: ${data.resendStatus})`
+          : '';
+        toast.warning(`Invitation created for ${values.email}, but email failed to send. ${data.emailError ? 'Error: ' + data.emailError : 'Check server logs for details.'}${transportInfo}`);
+        console.warn('Email sending failed:', { 
+          emailError: data.emailError, 
+          emailTransport: data.emailTransport,
+          resendStatus: data.resendStatus,
+          fullResponse: data 
+        });
       }
     } catch (error: any) {
       console.error('Invitation error:', error);

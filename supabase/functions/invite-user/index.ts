@@ -344,6 +344,8 @@ const handler = async (req: Request): Promise<Response> => {
         // Step 3: Send invitation email
         let emailSent = false;
         let emailError = null;
+        let emailTransport = "none";
+        let resendStatus = undefined;
 
         try {
           if (!resendApiKey) {
@@ -391,6 +393,8 @@ const handler = async (req: Request): Promise<Response> => {
             </html>
           `;
 
+          console.log(`[${correlationId}] POST: Attempting Resend SDK email send`);
+
           const { data, error } = await resend.emails.send({
             from: "Transform Hub <noreply@5ytest.com>",
             to: [emailNormalized],
@@ -398,19 +402,87 @@ const handler = async (req: Request): Promise<Response> => {
             html: emailHtml,
           });
 
-          if (error) {
-            throw error;
-          }
-
-          emailSent = true;
-          console.log(`[${correlationId}] POST: Invitation email sent successfully`, {
-            to: emailNormalized.substring(0, 3) + '***@' + emailNormalized.split('@')[1],
-            emailId: data?.id
+          console.log(`[${correlationId}] POST: Resend SDK response`, {
+            hasData: !!data,
+            dataId: data?.id,
+            hasError: !!error,
+            errorType: typeof error,
+            errorKeys: error ? Object.keys(error) : [],
+            errorJson: error ? JSON.stringify(error) : null,
           });
+
+          // Check if SDK succeeded
+          if (data?.id && !error) {
+            emailSent = true;
+            emailTransport = "sdk";
+            console.log(`[${correlationId}] POST: Email sent via SDK successfully`, {
+              to: emailNormalized.substring(0, 3) + '***@' + emailNormalized.split('@')[1],
+              emailId: data.id,
+              transport: emailTransport
+            });
+          } else {
+            // SDK failed or returned no ID - try direct fetch
+            console.log(`[${correlationId}] POST: SDK failed, attempting direct Resend API call`);
+            
+            const directResponse = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${resendApiKey}`,
+              },
+              body: JSON.stringify({
+                from: "Transform Hub <noreply@5ytest.com>",
+                to: [emailNormalized],
+                subject: "You've Been Invited to Transform Hub",
+                html: emailHtml,
+              }),
+            });
+
+            resendStatus = directResponse.status;
+            const directResponseText = await directResponse.text();
+            
+            console.log(`[${correlationId}] POST: Direct Resend API response`, {
+              status: directResponse.status,
+              statusText: directResponse.statusText,
+              headerNames: Array.from(directResponse.headers.keys()),
+              bodyLength: directResponseText.length,
+              bodyPreview: directResponseText.substring(0, 200),
+            });
+
+            if (directResponse.ok) {
+              try {
+                const directData = JSON.parse(directResponseText);
+                if (directData?.id) {
+                  emailSent = true;
+                  emailTransport = "fetch";
+                  console.log(`[${correlationId}] POST: Email sent via direct fetch successfully`, {
+                    to: emailNormalized.substring(0, 3) + '***@' + emailNormalized.split('@')[1],
+                    emailId: directData.id,
+                    transport: emailTransport,
+                    status: resendStatus
+                  });
+                } else {
+                  emailError = `Resend returned ${directResponse.status} but no email ID`;
+                }
+              } catch (parseError) {
+                emailError = `Resend returned ${directResponse.status} but invalid JSON: ${directResponseText.substring(0, 100)}`;
+              }
+            } else {
+              // Extract error message from response
+              try {
+                const errorData = JSON.parse(directResponseText);
+                emailError = `Resend API error (${directResponse.status}): ${errorData.message || errorData.error || directResponseText.substring(0, 100)}`;
+              } catch {
+                emailError = `Resend API error (${directResponse.status}): ${directResponseText.substring(0, 100)}`;
+              }
+            }
+          }
         } catch (error: any) {
-          emailError = error.message || "Unknown email error";
+          emailError = error.message || (typeof error === 'object' ? JSON.stringify(error).substring(0, 200) : String(error)) || "Unknown email error";
           console.error(`[${correlationId}] POST: Failed to send invitation email`, {
             error: emailError,
+            errorType: typeof error,
+            errorConstructor: error?.constructor?.name,
             hasApiKey: !!resendApiKey,
             errorDetails: error,
           });
@@ -431,6 +503,8 @@ const handler = async (req: Request): Promise<Response> => {
             invitationUrl,
             emailSent,
             emailError: emailError || undefined,
+            emailTransport,
+            resendStatus,
             correlationId,
           }),
           {
