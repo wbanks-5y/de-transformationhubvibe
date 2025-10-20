@@ -391,16 +391,21 @@ const handler = async (req: Request): Promise<Response> => {
             </html>
           `;
 
-          const emailResponse = await resend.emails.send({
-            from: "Transform Hub <onboarding@resend.dev>",
+          const { data, error } = await resend.emails.send({
+            from: "Transform Hub <noreply@5ytest.com>",
             to: [emailNormalized],
             subject: "You've Been Invited to Transform Hub",
             html: emailHtml,
           });
 
+          if (error) {
+            throw error;
+          }
+
           emailSent = true;
           console.log(`[${correlationId}] POST: Invitation email sent successfully`, {
-            to: emailNormalized.substring(0, 3) + '***@' + emailNormalized.split('@')[1]
+            to: emailNormalized.substring(0, 3) + '***@' + emailNormalized.split('@')[1],
+            emailId: data?.id
           });
         } catch (error: any) {
           emailError = error.message || "Unknown email error";
