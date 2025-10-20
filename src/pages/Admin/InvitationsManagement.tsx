@@ -32,7 +32,7 @@ interface PendingInvitation {
 const InvitationsManagement = () => {
   const [loading, setLoading] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
-  const [loadingInvitations, setLoadingInvitations] = useState(true);
+  const [loadingInvitations, setLoadingInvitations] = useState(false);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -99,8 +99,7 @@ const InvitationsManagement = () => {
         throw new Error(data.error);
       }
       
-      toast.success(`Invitation resent to ${email}`);
-      fetchPendingInvitations(); // Refresh the list
+      toast.success(`Invitation resent to ${email}. Click refresh to update the list.`);
     } catch (error: any) {
       console.error('Resend invitation error:', error);
       toast.error(error.message || "Failed to resend invitation");
@@ -129,8 +128,7 @@ const InvitationsManagement = () => {
         throw new Error(data.error);
       }
       
-      toast.success(`Invitation cancelled for ${email}`);
-      fetchPendingInvitations(); // Refresh the list
+      toast.success(`Invitation cancelled for ${email}. Click refresh to update the list.`);
     } catch (error: any) {
       console.error('Cancel invitation error:', error);
       toast.error(error.message || "Failed to cancel invitation");
@@ -139,9 +137,6 @@ const InvitationsManagement = () => {
     }
   };
 
-  useEffect(() => {
-    fetchPendingInvitations();
-  }, []);
   
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
@@ -178,8 +173,7 @@ const InvitationsManagement = () => {
       
       console.log('Invitation response:', data);
       form.reset();
-      toast.success(`Invitation sent to ${values.email}`);
-      fetchPendingInvitations(); // Refresh the list after sending
+      toast.success(`Invitation sent to ${values.email}. Click refresh to see it in the list.`);
     } catch (error: any) {
       console.error('Invitation error:', error);
       toast.error(error.message || "Failed to send invitation");
@@ -260,9 +254,9 @@ const InvitationsManagement = () => {
             ) : pendingInvitations.length === 0 ? (
               <div className="h-48 flex flex-col items-center justify-center text-center">
                 <Mail className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No pending invitations</p>
+                <p className="text-muted-foreground">No pending invitations loaded</p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Invitations will appear here once they've been sent
+                  Click the refresh button above to load pending invitations
                 </p>
               </div>
             ) : (
