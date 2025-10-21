@@ -78,13 +78,38 @@ const handler = async (req: Request): Promise<Response> => {
           );
         }
 
+        // Add debugging to see what fields are actually present
+        if (authData?.users && authData.users.length > 0) {
+          const sampleUser = authData.users[0];
+          console.log(`[${correlationId}] GET: Sample user fields:`, {
+            hasInvitedAt: !!sampleUser?.invited_at,
+            hasConfirmationSentAt: !!sampleUser?.confirmation_sent_at,
+            hasEmailConfirmedAt: !!sampleUser?.email_confirmed_at,
+            hasLastSignInAt: !!sampleUser?.last_sign_in_at,
+            totalUsers: authData.users.length
+          });
+        }
+
         // Filter for users who haven't confirmed their email (pending invitations)
+        // Use multiple indicators since invited_at may not always be populated
         const pendingInvitations = (authData?.users || [])
-          .filter((user) => !user.email_confirmed_at && user.invited_at)
+          .filter((user) => {
+            // User is pending if:
+            // 1. Email not confirmed
+            // 2. Never signed in
+            // 3. Has one of: invited_at, confirmation_sent_at, or was created recently
+            return (
+              !user.email_confirmed_at && 
+              !user.last_sign_in_at &&
+              (user.invited_at || user.confirmation_sent_at || user.created_at)
+            );
+          })
           .map((user) => ({
             id: user.id,
             email: user.email,
             invited_at: user.invited_at,
+            confirmation_sent_at: user.confirmation_sent_at,
+            created_at: user.created_at,
             status: "pending",
           }));
 
