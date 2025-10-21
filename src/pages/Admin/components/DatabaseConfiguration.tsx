@@ -7,9 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { AlertCircle, CheckCircle, Database, Settings, RefreshCw, ExternalLink, Info, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
-// Import current Supabase configuration
-const CURRENT_SUPABASE_URL = "https://fgbilpzuniuqrpetnbgz.supabase.co";
-const CURRENT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnYmlscHp1bml1cXJwZXRuYmd6Iiwicm9sZSI6ImFub24iLCJp";
+// Import current Supabase configuration from environment variables
+const CURRENT_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const CURRENT_SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 interface DatabaseConfig {
   id: string;
