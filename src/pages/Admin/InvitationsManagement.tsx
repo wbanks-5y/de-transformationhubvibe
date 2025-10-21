@@ -112,7 +112,16 @@ const InvitationsManagement = () => {
         throw new Error(data.error);
       }
       
-      toast.success(`Invitation resent to ${email}. Click refresh to update the list.`);
+      // Show success with debug info if available
+      let successMessage = `Invitation resent to ${email}. Click refresh to update the list.`;
+      if (data?.resendEmailId || data?.correlationId) {
+        console.log(`[Debug] Resend Email ID: ${data?.resendEmailId || 'N/A'}, Correlation ID: ${data?.correlationId || 'N/A'}`);
+        successMessage += ` [ID: ${data?.resendEmailId || data?.correlationId || 'N/A'}]`;
+      }
+      
+      toast.success(successMessage, {
+        duration: 5000,
+      });
     } catch (error: any) {
       console.error('Resend invitation error:', error);
       toast.error(error.message || "Failed to resend invitation");
@@ -186,7 +195,17 @@ const InvitationsManagement = () => {
       
       console.log('Invitation response:', data);
       form.reset();
-      toast.success(`Invitation sent to ${values.email}. Click refresh to see it in the list.`);
+      
+      // Show success with debug info if available
+      let successMessage = `Invitation sent to ${values.email}. Click refresh to see it in the list.`;
+      if (data?.resendEmailId || data?.correlationId) {
+        console.log(`[Debug] Resend Email ID: ${data?.resendEmailId || 'N/A'}, Correlation ID: ${data?.correlationId || 'N/A'}`);
+        successMessage += ` [ID: ${data?.resendEmailId || data?.correlationId || 'N/A'}]`;
+      }
+      
+      toast.success(successMessage, {
+        duration: 5000,
+      });
     } catch (error: any) {
       console.error('Invitation error:', error);
       toast.error(error.message || "Failed to send invitation");

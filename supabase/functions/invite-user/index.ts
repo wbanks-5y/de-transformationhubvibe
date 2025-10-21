@@ -261,55 +261,91 @@ const handler = async (req: Request): Promise<Response> => {
 
         // Optional: Send custom email via Resend
         console.log(`[${correlationId}] POST: RESEND_API_KEY ${resendApiKey ? 'FOUND' : 'NOT FOUND'} - ${resendApiKey ? 'Will send email via Resend' : 'Skipping custom email'}`);
+        let resendEmailId = null;
+        
         if (resendApiKey) {
           try {
             console.log(`[${correlationId}] POST: Sending invitation email via Resend`);
             
-            const resendResponse = await fetch("https://api.resend.com/emails", {
+            const emailSubject = `You're invited to join ${organizationSlug || 'the organization'}`;
+            const emailTextContent = `You've been invited to join ${organizationSlug || 'our organization'}. Open this link to accept your invitation and create your account: ${redirectTo}`;
+            const emailHtmlContent = `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              </head>
+              <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background-color: #f8f9fa; border-radius: 8px; padding: 40px; margin-bottom: 30px;">
+                  <h1 style="color: #1a1a1a; margin: 0 0 20px 0; font-size: 28px; font-weight: 600;">Welcome!</h1>
+                  <p style="font-size: 16px; margin-bottom: 20px; color: #4a5568;">You've been invited to join <strong>${organizationSlug || 'our organization'}</strong>.</p>
+                  <p style="font-size: 16px; margin-bottom: 30px; color: #4a5568;">Click the button below to accept your invitation and create your account:</p>
+                  <div style="text-align: center; margin: 30px 0;">
+                    <a href="${redirectTo}" style="background-color: #4F46E5; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px;">Accept Invitation</a>
+                  </div>
+                  <p style="font-size: 14px; color: #718096; margin-top: 30px;">If the button doesn't work, copy and paste this link into your browser:</p>
+                  <p style="font-size: 14px; color: #4F46E5; word-break: break-all;">${redirectTo}</p>
+                </div>
+                <div style="text-align: center; color: #a0aec0; font-size: 12px;">
+                  <p>This invitation was sent to ${emailNormalized}</p>
+                </div>
+              </body>
+              </html>
+            `;
+            
+            // Try primary domain first
+            let resendResponse = await fetch("https://api.resend.com/emails", {
               method: "POST",
               headers: {
                 "Authorization": `Bearer ${resendApiKey}`,
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                from: "noreply@5ytest.com",
+                from: "5Y Technology <noreply@5ytest.com>",
                 to: [emailNormalized],
-                subject: `You're invited to join ${organizationSlug || 'the organization'}`,
-                html: `
-                  <!DOCTYPE html>
-                  <html>
-                  <head>
-                    <meta charset="utf-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                  </head>
-                  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <div style="background-color: #f8f9fa; border-radius: 8px; padding: 40px; margin-bottom: 30px;">
-                      <h1 style="color: #1a1a1a; margin: 0 0 20px 0; font-size: 28px; font-weight: 600;">Welcome!</h1>
-                      <p style="font-size: 16px; margin-bottom: 20px; color: #4a5568;">You've been invited to join <strong>${organizationSlug || 'our organization'}</strong>.</p>
-                      <p style="font-size: 16px; margin-bottom: 30px; color: #4a5568;">Click the button below to accept your invitation and create your account:</p>
-                      <div style="text-align: center; margin: 30px 0;">
-                        <a href="${redirectTo}" style="background-color: #4F46E5; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px;">Accept Invitation</a>
-                      </div>
-                      <p style="font-size: 14px; color: #718096; margin-top: 30px;">If the button doesn't work, copy and paste this link into your browser:</p>
-                      <p style="font-size: 14px; color: #4F46E5; word-break: break-all;">${redirectTo}</p>
-                    </div>
-                    <div style="text-align: center; color: #a0aec0; font-size: 12px;">
-                      <p>This invitation was sent to ${emailNormalized}</p>
-                    </div>
-                  </body>
-                  </html>
-                `,
+                subject: emailSubject,
+                text: emailTextContent,
+                html: emailHtmlContent,
               }),
             });
 
-            if (!resendResponse.ok) {
-              console.warn(`[${correlationId}] POST: Resend email failed:`, await resendResponse.text());
-            } else {
-              console.log(`[${correlationId}] POST: Resend email sent successfully`);
+            let resendBody = await resendResponse.json().catch(() => null);
+            
+            // If primary domain fails with 4xx, try fallback
+            if (!resendResponse.ok && resendResponse.status >= 400 && resendResponse.status < 500) {
+              console.log(`[${correlationId}] POST: Primary Resend send failed (${resendResponse.status}). Response:`, resendBody);
+              console.log(`[${correlationId}] POST: Attempting fallback to onboarding@resend.dev`);
+              
+              resendResponse = await fetch("https://api.resend.com/emails", {
+                method: "POST",
+                headers: {
+                  "Authorization": `Bearer ${resendApiKey}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  from: "Lovable <onboarding@resend.dev>",
+                  reply_to: "noreply@5ytest.com",
+                  to: [emailNormalized],
+                  subject: emailSubject,
+                  text: emailTextContent,
+                  html: emailHtmlContent,
+                }),
+              });
+              
+              resendBody = await resendResponse.json().catch(() => null);
+              console.log(`[${correlationId}] POST: Fallback Resend response (${resendResponse.status}):`, resendBody);
             }
-          } catch (emailError) {
-            console.warn(`[${correlationId}] POST: Error sending email via Resend:`, emailError);
-            // Don't fail the request if email fails
+
+            if (!resendResponse.ok) {
+              console.error(`[${correlationId}] POST: Resend email failed with status ${resendResponse.status}. Body:`, resendBody);
+            } else {
+              resendEmailId = resendBody?.id || null;
+              console.log(`[${correlationId}] POST: Resend email sent successfully. Email ID: ${resendEmailId}`);
+            }
+          } catch (resendError: any) {
+            console.error(`[${correlationId}] POST: Error sending email via Resend:`, resendError);
+            // Continue even if email sending fails
           }
         }
 
@@ -319,6 +355,7 @@ const handler = async (req: Request): Promise<Response> => {
           JSON.stringify({
             success: true,
             message: "Invitation sent successfully",
+            resendEmailId,
             correlationId,
           }),
           {
