@@ -3,6 +3,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 import type { Organization } from '@/types/management';
 import { getOrganizationClient, clearOrganizationClient } from '@/lib/supabase/organization-client';
+import { useAuth } from '@/context/AuthContext';
 
 interface OrganizationContextType {
   currentOrganization: Organization | null;
@@ -14,17 +15,19 @@ interface OrganizationContextType {
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 
 export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { session } = useAuth();
   const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
   const [organizationClient, setOrganizationClient] = useState<SupabaseClient<Database> | null>(null);
 
-  const setOrganization = useCallback((org: Organization) => {
+  const setOrganization = useCallback((org: Organization, accessToken?: string) => {
     setCurrentOrganization(org);
     
-    // Create/retrieve client for this organization's database
+    // Create/retrieve client for this organization's database with auth token
     const client = getOrganizationClient(
       org.supabase_url,
       org.supabase_anon_key,
-      org.slug
+      org.slug,
+      accessToken
     );
     
     setOrganizationClient(client);
@@ -42,19 +45,20 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     localStorage.removeItem('current_organization');
   }, [currentOrganization]);
 
-  // On mount, try to restore organization from localStorage
+  // On mount or session change, restore organization from localStorage with current auth token
   React.useEffect(() => {
     const stored = localStorage.getItem('current_organization');
     if (stored) {
       try {
         const org = JSON.parse(stored) as Organization;
-        setOrganization(org);
+        // Pass the current session's access token when restoring
+        setOrganization(org, session?.access_token);
       } catch (error) {
         console.error('Failed to restore organization from storage:', error);
         localStorage.removeItem('current_organization');
       }
     }
-  }, [setOrganization]);
+  }, [setOrganization, session]);
 
   const value = {
     currentOrganization,

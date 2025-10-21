@@ -10,12 +10,21 @@ const clientCache = new Map<string, SupabaseClient<Database>>();
 export const getOrganizationClient = (
   supabaseUrl: string,
   supabaseAnonKey: string,
-  organizationSlug: string
+  organizationSlug: string,
+  accessToken?: string
 ): SupabaseClient<Database> => {
-  // Create unique cache key combining org slug and URL to avoid client reuse across different databases
-  const cacheKey = `${organizationSlug}-${supabaseUrl}`;
+  // Create unique cache key combining org slug, URL, and token presence
+  const hasToken = !!accessToken;
+  const cacheKey = `${organizationSlug}-${supabaseUrl}-${hasToken}`;
   
-  // Check if we already have a client for this organization
+  // Clear old cache entries without token if we now have a token (or vice versa)
+  for (const key of clientCache.keys()) {
+    if (key.startsWith(`${organizationSlug}-${supabaseUrl}-`) && key !== cacheKey) {
+      clientCache.delete(key);
+    }
+  }
+  
+  // Check if we already have a client for this organization with current auth state
   if (clientCache.has(cacheKey)) {
     return clientCache.get(cacheKey)!;
   }
@@ -25,8 +34,14 @@ export const getOrganizationClient = (
     ? supabaseUrl 
     : `https://${supabaseUrl}`;
 
-  // Create new client for this organization's database
-  const client = createClient<Database>(fullUrl, supabaseAnonKey);
+  // Create new client for this organization's database with auth token
+  const client = createClient<Database>(fullUrl, supabaseAnonKey, {
+    global: {
+      headers: accessToken ? {
+        Authorization: `Bearer ${accessToken}`
+      } : undefined
+    }
+  });
   
   // Cache it for future use
   clientCache.set(cacheKey, client);
