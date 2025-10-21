@@ -21,14 +21,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const setOrganization = useCallback((org: Organization) => {
     setCurrentOrganization(org);
     
-    // Create/retrieve client for this organization's database without auth token initially
-    const client = getOrganizationClient(
-      org.supabase_url,
-      org.supabase_anon_key,
-      org.slug
-    );
-    
-    setOrganizationClient(client);
+    // Don't create client here - wait for updateOrganizationAuth to be called with token
+    // This prevents caching an unauthenticated client
     
     // Store organization info in localStorage for persistence
     localStorage.setItem('current_organization', JSON.stringify(org));
@@ -36,6 +30,12 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const updateOrganizationAuth = useCallback((accessToken?: string | null) => {
     if (!currentOrganization) return;
+    
+    console.log('[OrganizationContext] Creating client with auth token:', {
+      hasToken: !!accessToken,
+      orgSlug: currentOrganization.slug
+    });
+    
     const client = getOrganizationClient(
       currentOrganization.supabase_url,
       currentOrganization.supabase_anon_key,
@@ -60,7 +60,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (stored) {
       try {
         const org = JSON.parse(stored) as Organization;
+        console.log('[OrganizationContext] Restoring organization from storage (no client yet):', org.slug);
         setOrganization(org);
+        // Note: Client will be created when AuthContext calls updateOrganizationAuth with token
       } catch (error) {
         console.error('Failed to restore organization from storage:', error);
         localStorage.removeItem('current_organization');

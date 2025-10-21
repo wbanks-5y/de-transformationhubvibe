@@ -53,6 +53,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Get initial session from organization's database
     const getInitialSession = async () => {
       const { data: { session } } = await organizationClient.auth.getSession();
+      console.log('[AuthContext] Initial session loaded:', {
+        hasSession: !!session,
+        userId: session?.user?.id,
+        hasAccessToken: !!session?.access_token
+      });
       setSession(session);
       setUser(session?.user ?? null);
       updateOrganizationAuth(session?.access_token);
@@ -64,7 +69,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes on organization's database
     const { data: { subscription } } = organizationClient.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state changed:', event);
+        console.log('[AuthContext] Auth state changed:', {
+          event,
+          userId: session?.user?.id,
+          hasAccessToken: !!session?.access_token
+        });
         setSession(session);
         setUser(session?.user ?? null);
         updateOrganizationAuth(session?.access_token);
