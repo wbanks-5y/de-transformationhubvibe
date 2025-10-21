@@ -47,7 +47,20 @@ const VerifyInvitation = () => {
           return;
         }
 
-        // Step 2: Create org-specific Supabase client (don't mark token as used yet)
+        // Step 2: Mark token as used (prevents reuse, even from Safelinks pre-fetch)
+        console.log("Marking token as used...");
+        
+        const { error: updateError } = await managementClient
+          .from("invitation_tokens")
+          .update({ used_at: new Date().toISOString() })
+          .eq("token", code);
+
+        if (updateError) {
+          console.error("Failed to mark token as used:", updateError);
+          // Continue anyway - token validation succeeded
+        }
+
+        // Step 3: Create org-specific Supabase client
         console.log("Creating organization-specific client...");
         
         const orgClient = getOrganizationClient(
@@ -56,8 +69,7 @@ const VerifyInvitation = () => {
           orgSlug
         );
 
-        // Step 3: Redirect directly to password setup page with token
-        // Token will be marked as used after successful password setup by complete-invitation
+        // Step 4: Redirect directly to password setup page with token
         console.log("Redirecting to password setup page...");
         setStatus("redirecting");
         navigate(`/set-password?org=${orgSlug}&token=${code}`);
