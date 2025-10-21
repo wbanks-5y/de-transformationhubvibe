@@ -62,10 +62,10 @@ const ApproveAdmin = () => {
       setIsLoading(true);
       setResult(null);
       
-      const success = await assignAdminRoleByEmail(email, organizationClient);
+      const result = await assignAdminRoleByEmail(email, organizationClient);
       
-      if (success) {
-        setResult('Success! User has been made an admin.');
+      if (result.success) {
+        setResult('✓ Success! User has been made an admin.');
         toast.success("Admin role assigned successfully");
         
         // Refresh health status
@@ -78,14 +78,35 @@ const ApproveAdmin = () => {
           toast.success("Your session has been refreshed with new permissions");
         }
       } else {
-        setResult('Failed to assign admin role. Check console for errors.');
-        toast.error("Failed to assign admin role");
+        // Extract and display the actual error message
+        const errorMsg = result.error?.message || result.error?.hint || 'Unknown error';
+        let userFriendlyMessage = '';
+        
+        // Provide user-friendly explanations for common errors
+        if (errorMsg.includes('Unauthorized') || errorMsg.includes('Only admins')) {
+          userFriendlyMessage = '⚠️ You need admin privileges to assign admin roles. Please ensure you are logged in as an admin.';
+        } else if (errorMsg.includes('not found') || errorMsg.includes('User with email')) {
+          userFriendlyMessage = `⚠️ User with email "${email}" not found. The user must sign up first before being assigned admin role.`;
+        } else if (errorMsg.includes('Admin role not found')) {
+          userFriendlyMessage = '⚠️ Admin role not found in database. Please run the database migration.';
+        } else {
+          userFriendlyMessage = `⚠️ Failed to assign admin role: ${errorMsg}`;
+        }
+        
+        setResult(userFriendlyMessage);
+        toast.error("Failed to assign admin role", {
+          description: errorMsg
+        });
+        
+        // Log full error details for debugging
+        console.error('Full error details:', result.error);
       }
     } catch (error: any) {
       console.error('Error approving admin:', error);
-      setResult(`Error: ${error.message || 'Unknown error'}`);
+      const errorMsg = error.message || 'Unknown error';
+      setResult(`⚠️ Error: ${errorMsg}`);
       toast.error("An error occurred", {
-        description: error.message || "Unknown error"
+        description: errorMsg
       });
     } finally {
       setIsLoading(false);

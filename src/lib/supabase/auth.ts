@@ -5,7 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 export const assignAdminRoleByEmail = async (
   email: string, 
   client?: SupabaseClient
-): Promise<boolean> => {
+): Promise<{ success: boolean; error?: any }> => {
   const supabaseClient = client || supabase;
   try {
     // Use the secure database function instead of direct manipulation
@@ -15,13 +15,13 @@ export const assignAdminRoleByEmail = async (
     
     if (error) {
       console.error("Error in secure admin assignment:", error);
-      return false;
+      return { success: false, error };
     }
     
-    return data === true;
+    return { success: data === true };
   } catch (error) {
     console.error("Error in assignAdminRoleByEmail:", error);
-    return false;
+    return { success: false, error };
   }
 };
 
