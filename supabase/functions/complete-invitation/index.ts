@@ -71,11 +71,31 @@ serve(async (req: Request) => {
       .single();
 
     if (tokenError || !tokenData) {
-      console.error("[complete-invitation] Invalid or expired token", tokenError);
+      console.error("[complete-invitation] Invalid or expired token", {
+        error: tokenError,
+        message: tokenError?.message,
+        hint: tokenError?.hint,
+        details: tokenError?.details
+      });
       return new Response(
         JSON.stringify({
           success: false,
-          error: "Invalid or expired invitation",
+          error: "Invalid or expired invitation. The invitation may have already been used or does not exist.",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Verify organization_id is present
+    if (!tokenData.organization_id) {
+      console.error("[complete-invitation] Token missing organization_id - data integrity issue");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Invitation data is incomplete. Please request a new invitation.",
         }),
         {
           status: 400,

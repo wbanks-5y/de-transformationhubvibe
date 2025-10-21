@@ -68,25 +68,20 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Handle GET request to fetch pending invitations
     if (req.method === "GET") {
-      console.log(`[${correlationId}] GET: Fetching pending invitations`);
+      console.log(`[${correlationId}] GET: Fetching pending invitations from management DB`);
 
       try {
-        // Get all users from auth.users
-        const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+        // Get management DB credentials
+        const managementUrl = Deno.env.get("MANAGEMENT_SUPABASE_URL");
+        const managementKey = Deno.env.get("MANAGEMENT_SUPABASE_ANON_KEY");
 
-        console.log(`[${correlationId}] GET: listUsers result`, {
-          success: !authError,
-          totalUsers: authData?.users?.length || 0,
-          errorMessage: authError?.message
-        });
-
-        if (authError) {
-          console.error(`[${correlationId}] GET: Error fetching auth users`, authError);
+        if (!managementUrl || !managementKey) {
+          console.error(`[${correlationId}] GET: Missing management DB credentials`);
           return new Response(
             JSON.stringify({
               success: true,
               invitations: [],
-              message: "Unable to fetch from auth API",
+              message: "Configuration error",
             }),
             {
               status: 200,
@@ -95,19 +90,40 @@ const handler = async (req: Request): Promise<Response> => {
           );
         }
 
-        // Filter for users who haven't confirmed their email (pending invitations)
-        const pendingInvitations = (authData?.users || [])
-          .filter((user) => !user.email_confirmed_at && user.invited_at)
-          .map((user) => ({
-            id: user.id,
-            email: user.email,
-            invited_at: user.invited_at,
-            status: "pending",
-          }));
+        const managementClient = createClient(managementUrl, managementKey);
+
+        // Fetch pending invitations from invitation_tokens table
+        const { data: invitations, error: invitationsError } = await managementClient
+          .from("invitation_tokens")
+          .select("id, email, created_at, organization_slug, expires_at")
+          .is("used_at", null)
+          .order("created_at", { ascending: false });
 
         console.log(`[${correlationId}] GET: Pending invitations found`, {
-          count: pendingInvitations.length
+          count: invitations?.length || 0
         });
+
+        if (invitationsError) {
+          console.error(`[${correlationId}] GET: Error fetching invitations`, invitationsError);
+          return new Response(
+            JSON.stringify({
+              success: true,
+              invitations: [],
+              message: "Unable to fetch invitations",
+            }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            },
+          );
+        }
+
+        const formattedInvitations = (invitations || []).map((inv) => ({
+          id: inv.id,
+          email: inv.email,
+          invited_at: inv.created_at,
+          status: new Date(inv.expires_at) < new Date() ? "expired" : "pending",
+        }));
 
         console.log(`[${correlationId}] FUNCTION END: Success`, {
           method: 'GET',
@@ -118,7 +134,7 @@ const handler = async (req: Request): Promise<Response> => {
         return new Response(
           JSON.stringify({
             success: true,
-            invitations: pendingInvitations,
+            invitations: formattedInvitations,
             correlationId,
           }),
           {
@@ -127,7 +143,7 @@ const handler = async (req: Request): Promise<Response> => {
           },
         );
       } catch (listError) {
-        console.error("Error in listUsers:", listError);
+        console.error(`[${correlationId}] GET: Error in fetch`, listError);
         return new Response(
           JSON.stringify({
             success: true,
@@ -278,9 +294,10 @@ const handler = async (req: Request): Promise<Response> => {
           timestamp: new Date().toISOString()
         });
 
-        // Step 1: Create custom invitation token in management DB
+        // Step 1: Get management DB credentials
         const managementUrl = Deno.env.get("MANAGEMENT_SUPABASE_URL");
         const managementKey = Deno.env.get("MANAGEMENT_SUPABASE_ANON_KEY");
+        const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
         if (!managementUrl || !managementKey) {
           console.error(`[${correlationId}] POST: Missing management DB credentials`);
@@ -296,17 +313,61 @@ const handler = async (req: Request): Promise<Response> => {
           );
         }
 
+        if (!resendApiKey) {
+          console.error(`[${correlationId}] POST: Missing Resend API key`);
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: "Email service not configured",
+            }),
+            {
+              status: 500,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            },
+          );
+        }
+
         const managementClient = createClient(managementUrl, managementKey);
 
-        console.log(`[${correlationId}] POST: Creating custom invitation token in management DB`);
+        // Step 2: Look up organization by slug
+        console.log(`[${correlationId}] POST: Looking up organization`, { organizationSlug });
+
+        const { data: orgData, error: orgError } = await managementClient
+          .from("organizations")
+          .select("id, name, supabase_url, supabase_anon_key")
+          .eq("slug", organizationSlug || "default")
+          .single();
+
+        if (orgError || !orgData) {
+          console.error(`[${correlationId}] POST: Organization not found`, orgError);
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: "Organization not found",
+            }),
+            {
+              status: 404,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            },
+          );
+        }
+
+        console.log(`[${correlationId}] POST: Organization found`, { 
+          orgId: orgData.id,
+          orgName: orgData.name 
+        });
+
+        // Step 3: Create invitation token with organization_id
+        console.log(`[${correlationId}] POST: Creating invitation token`);
 
         const { data: tokenData, error: tokenError } = await managementClient
           .from("invitation_tokens")
           .insert({
             email: emailNormalized,
+            organization_id: orgData.id,
             organization_slug: organizationSlug || "default",
-            organization_supabase_url: supabaseUrl,
-            organization_supabase_anon_key: Deno.env.get("SUPABASE_ANON_KEY") || "",
+            organization_supabase_url: orgData.supabase_url,
+            organization_supabase_anon_key: orgData.supabase_anon_key,
           })
           .select("token")
           .single();
@@ -325,14 +386,62 @@ const handler = async (req: Request): Promise<Response> => {
           );
         }
 
-        // Step 2: Construct custom invitation URL
-        // This URL will be used by the Management App to send the invitation email
+        // Step 4: Construct invitation URL
         const invitationUrl = `${cleanOrigin}/verify-invitation?code=${tokenData.token}&org=${encodeURIComponent(organizationSlug || "default")}`;
 
-        console.log(`[${correlationId}] POST: Custom invitation created successfully`, {
+        console.log(`[${correlationId}] POST: Invitation token created`, {
           userEmail: `${emailNormalized.substring(0, 3)}***@${emailNormalized.split('@')[1]}`,
-          invitationUrl: invitationUrl.substring(0, 50) + "...",
         });
+
+        // Step 5: Send invitation email via Resend
+        console.log(`[${correlationId}] POST: Sending invitation email via Resend`);
+
+        try {
+          const resendResponse = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${resendApiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              from: "Transformation Hub <onboarding@resend.dev>",
+              to: [emailNormalized],
+              subject: `You're invited to join ${orgData.name}`,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h1 style="color: #333;">Welcome to ${orgData.name}</h1>
+                  <p>You've been invited to join ${orgData.name}. Click the link below to set up your account:</p>
+                  <a href="${invitationUrl}" 
+                     style="display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; 
+                            text-decoration: none; border-radius: 6px; margin: 20px 0;">
+                    Set Up Your Account
+                  </a>
+                  <p style="color: #666; font-size: 14px;">
+                    Or copy and paste this link into your browser:<br>
+                    <a href="${invitationUrl}" style="color: #4F46E5;">${invitationUrl}</a>
+                  </p>
+                  <p style="color: #999; font-size: 12px; margin-top: 40px;">
+                    This invitation will expire in 7 days.
+                  </p>
+                </div>
+              `,
+            }),
+          });
+
+          const resendData = await resendResponse.json();
+
+          if (!resendResponse.ok) {
+            console.error(`[${correlationId}] POST: Resend API error`, resendData);
+            // Continue anyway - token is created
+          } else {
+            console.log(`[${correlationId}] POST: Email sent successfully`, { 
+              emailId: resendData.id 
+            });
+          }
+        } catch (emailError) {
+          console.error(`[${correlationId}] POST: Failed to send email`, emailError);
+          // Continue anyway - token is created and can be resent
+        }
 
         console.log(`[${correlationId}] FUNCTION END: Success`, {
           method: 'POST',
@@ -343,8 +452,8 @@ const handler = async (req: Request): Promise<Response> => {
         return new Response(
           JSON.stringify({
             success: true,
-            message: "Invitation created successfully",
-            invitationUrl, // Return this URL to Management App for email sending
+            message: "Invitation email sent successfully",
+            invitationUrl, // Still return URL for debugging/admin purposes
             correlationId,
           }),
           {

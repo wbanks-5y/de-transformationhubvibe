@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { useOrganization } from "@/context/OrganizationContext";
 import {
   Card,
   CardContent,
@@ -30,6 +31,7 @@ interface PendingInvitation {
 }
 
 const InvitationsManagement = () => {
+  const { currentOrganization } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [loadingInvitations, setLoadingInvitations] = useState(false);
@@ -72,7 +74,11 @@ const InvitationsManagement = () => {
       console.log('Resending invitation to:', email);
       
       const { data, error } = await supabase.functions.invoke('invite-user', {
-        body: { email }
+        body: { 
+          email,
+          organizationSlug: currentOrganization?.slug,
+          appBaseUrl: window.location.origin,
+        }
       });
       
       if (error) {
@@ -144,7 +150,11 @@ const InvitationsManagement = () => {
       console.log('Sending invitation to:', values.email);
       
       const { data, error } = await supabase.functions.invoke('invite-user', {
-        body: { email: values.email }
+        body: { 
+          email: values.email,
+          organizationSlug: currentOrganization?.slug,
+          appBaseUrl: window.location.origin,
+        }
       });
       
       if (error) {
@@ -173,7 +183,8 @@ const InvitationsManagement = () => {
       
       console.log('Invitation response:', data);
       form.reset();
-      toast.success(`Invitation sent to ${values.email}. Click refresh to see it in the list.`);
+      toast.success(`Invitation email sent to ${values.email}`);
+      fetchPendingInvitations(); // Refresh the list
     } catch (error: any) {
       console.error('Invitation error:', error);
       toast.error(error.message || "Failed to send invitation");
