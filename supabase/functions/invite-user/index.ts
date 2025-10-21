@@ -260,6 +260,7 @@ const handler = async (req: Request): Promise<Response> => {
         console.log(`[${correlationId}] POST: Invitation created successfully`);
 
         // Optional: Send custom email via Resend
+        console.log(`[${correlationId}] POST: RESEND_API_KEY ${resendApiKey ? 'FOUND' : 'NOT FOUND'} - ${resendApiKey ? 'Will send email via Resend' : 'Skipping custom email'}`);
         if (resendApiKey) {
           try {
             console.log(`[${correlationId}] POST: Sending invitation email via Resend`);
@@ -271,16 +272,32 @@ const handler = async (req: Request): Promise<Response> => {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                from: "noreply@yourdomain.com", // Update this with your verified domain
+                from: "noreply@5ytest.com",
                 to: [emailNormalized],
                 subject: `You're invited to join ${organizationSlug || 'the organization'}`,
                 html: `
-                  <h1>Welcome!</h1>
-                  <p>You've been invited to join ${organizationSlug || 'our organization'}.</p>
-                  <p>Click the button below to accept your invitation and create your account:</p>
-                  <p><a href="${redirectTo}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Accept Invitation</a></p>
-                  <p>If the button doesn't work, copy and paste this link into your browser:</p>
-                  <p>${redirectTo}</p>
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  </head>
+                  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div style="background-color: #f8f9fa; border-radius: 8px; padding: 40px; margin-bottom: 30px;">
+                      <h1 style="color: #1a1a1a; margin: 0 0 20px 0; font-size: 28px; font-weight: 600;">Welcome!</h1>
+                      <p style="font-size: 16px; margin-bottom: 20px; color: #4a5568;">You've been invited to join <strong>${organizationSlug || 'our organization'}</strong>.</p>
+                      <p style="font-size: 16px; margin-bottom: 30px; color: #4a5568;">Click the button below to accept your invitation and create your account:</p>
+                      <div style="text-align: center; margin: 30px 0;">
+                        <a href="${redirectTo}" style="background-color: #4F46E5; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px;">Accept Invitation</a>
+                      </div>
+                      <p style="font-size: 14px; color: #718096; margin-top: 30px;">If the button doesn't work, copy and paste this link into your browser:</p>
+                      <p style="font-size: 14px; color: #4F46E5; word-break: break-all;">${redirectTo}</p>
+                    </div>
+                    <div style="text-align: center; color: #a0aec0; font-size: 12px;">
+                      <p>This invitation was sent to ${emailNormalized}</p>
+                    </div>
+                  </body>
+                  </html>
                 `,
               }),
             });
