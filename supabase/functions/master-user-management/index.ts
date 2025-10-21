@@ -170,12 +170,12 @@ serve(async (req) => {
         );
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in master-user-management:", error);
     return new Response(
       JSON.stringify({ 
         error: "Internal server error",
-        details: error.message 
+        details: error?.message || String(error)
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -282,7 +282,7 @@ async function handleCreateUser(supabaseAdmin: any, data: any) {
     }
 
     // Send welcome email notification
-    let emailResult = { sent: false, error: null };
+    let emailResult: { sent: boolean; error: string | null } = { sent: false, error: null };
     if (sendNotification) {
       emailResult = await sendWelcomeEmail(email, temporaryPassword, appRole === 'admin');
     }
@@ -313,10 +313,10 @@ async function handleCreateUser(supabaseAdmin: any, data: any) {
       { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating user:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error?.message || String(error) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -421,7 +421,7 @@ async function handleCreateAdminUser(supabaseAdmin: any, data: any) {
     }
 
     // Send welcome email notification
-    let emailResult = { sent: false, error: null };
+    let emailResult: { sent: boolean; error: string | null } = { sent: false, error: null };
     if (sendNotification) {
       emailResult = await sendWelcomeEmail(email, temporaryPassword, true);
     }
@@ -452,10 +452,10 @@ async function handleCreateAdminUser(supabaseAdmin: any, data: any) {
       { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating admin user:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error?.message || String(error) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -627,7 +627,7 @@ async function handleCreateUsersBulk(supabaseAdmin: any, data: any) {
       }
 
       // Send welcome email notification
-      let emailResult = { sent: false, error: null };
+      let emailResult: { sent: boolean; error: string | null } = { sent: false, error: null };
       if (sendNotification) {
         emailResult = await sendWelcomeEmail(email, temporaryPassword, appRole === 'admin');
       }
@@ -649,12 +649,12 @@ async function handleCreateUsersBulk(supabaseAdmin: any, data: any) {
       });
       successCount++;
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error processing user ${email}:`, error);
       results.push({
         email,
         success: false,
-        error: error.message
+        error: error?.message || String(error)
       });
       failureCount++;
     }
@@ -838,10 +838,10 @@ async function handleUpdateUser(supabaseAdmin: any, data: any) {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating user:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error?.message || String(error) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -1025,10 +1025,10 @@ async function handleUpdateOrganization(supabaseAdmin: any, data: any) {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating organization:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error?.message || String(error) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -1100,10 +1100,10 @@ async function handleUpdateOrganizationTier(supabaseAdmin: any, data: any) {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating organization tier:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error?.message || String(error) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -1177,10 +1177,10 @@ async function handleDeleteUser(supabaseAdmin: any, data: any) {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error deleting user:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error?.message || String(error) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -1280,12 +1280,12 @@ async function handleDeleteBulkUsers(supabaseAdmin: any, data: any) {
       });
       successCount++;
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error deleting user ${userId}:`, error);
       results.push({
         userId,
         success: false,
-        error: error.message
+        error: error?.message || String(error)
       });
       failureCount++;
     }

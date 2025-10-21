@@ -242,11 +242,12 @@ serve(async (req: Request) => {
     console.log("[complete-invitation] Invitation completed successfully");
 
     // Step 9: Return session information
+    const properties = sessionData.properties as any;
     return new Response(
       JSON.stringify({
         success: true,
-        accessToken: sessionData.properties.access_token,
-        refreshToken: sessionData.properties.refresh_token,
+        accessToken: properties.access_token,
+        refreshToken: properties.refresh_token,
         orgUrl: tokenData.organization_supabase_url,
         orgAnonKey: tokenData.organization_supabase_anon_key,
         userId: userId,
