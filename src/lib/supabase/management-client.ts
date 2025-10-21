@@ -27,12 +27,11 @@ export interface ManagementDatabase {
   };
 }
 
-// Management Database Connection - uses environment variables with fallback to main Supabase config
-const MANAGEMENT_URL = (import.meta.env.VITE_MANAGEMENT_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL) as string;
-const MANAGEMENT_KEY = (import.meta.env.VITE_MANAGEMENT_SUPABASE_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) as string;
-
-if (!MANAGEMENT_URL || !MANAGEMENT_KEY) {
-  console.warn('[Management Client] Missing management database environment variables, using main Supabase config');
-}
+// Management Database Connection
+//const MANAGEMENT_URL = "https://phndkfgodwmkuwuzbehi.supabase.co";
+const MANAGEMENT_URL = "https://fgbilpzuniuqrpetnbgz.supabase.co";
+//const MANAGEMENT_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBobmRrZmdvZHdta3V3dXpiZWhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzMTM4MDcsImV4cCI6MjA3NDg4OTgwN30.RtPwZD0z58gBY-HTJ0gTzLQGO2WRvCoKlMuGmdW7Vy4";
+const MANAGEMENT_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnYmlscHp1bml1cXJwZXRuYmd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4MDQ5NzMsImV4cCI6MjA3NDM4MDk3M30.XCQI7K3dohvX8QHyQ5dFrSggouyIPMdgq-orGVlaqPU";
 
 export const managementClient = createClient<ManagementDatabase>(MANAGEMENT_URL, MANAGEMENT_KEY);
