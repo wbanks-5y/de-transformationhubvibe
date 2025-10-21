@@ -12,7 +12,7 @@ import { checkDatabaseHealth, type DatabaseHealthStatus } from '@/lib/supabase/d
 import { CheckCircle2, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
 
 const ApproveAdmin = () => {
-  const [email, setEmail] = useState<string>('psaxton@5ytechnology.com');
+  const [email, setEmail] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [result, setResult] = useState<string | null>(null);
   const [dbHealth, setDbHealth] = useState<DatabaseHealthStatus | null>(null);
@@ -92,22 +92,7 @@ const ApproveAdmin = () => {
     }
   };
   
-  const checkCurrentUserAdmin = async () => {
-    if (user && organizationClient) {
-      try {
-        const isAdmin = await isUserAdmin(user.id, organizationClient);
-        if (isAdmin) {
-          toast.success("You already have admin privileges");
-          setResult('Current user already has admin privileges');
-        }
-      } catch (error) {
-        console.error('Error checking current user admin status:', error);
-      }
-    }
-  };
-  
   useEffect(() => {
-    checkCurrentUserAdmin();
     checkHealth();
   }, [user, organizationClient]);
 
