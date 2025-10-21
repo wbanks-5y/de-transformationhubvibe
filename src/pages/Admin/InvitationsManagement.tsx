@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { useOrganization } from "@/context/OrganizationContext";
 import { toast } from "sonner";
 import {
   Card,
@@ -30,6 +31,7 @@ interface PendingInvitation {
 }
 
 const InvitationsManagement = () => {
+  const { organizationClient, currentOrganization } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [loadingInvitations, setLoadingInvitations] = useState(false);
@@ -40,13 +42,24 @@ const InvitationsManagement = () => {
       email: "",
     },
   });
+
+  // Safety check for organization context
+  if (!organizationClient || !currentOrganization) {
+    return (
+      <div className="container px-4 py-6 mx-auto">
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Error: Organization context not available</p>
+        </div>
+      </div>
+    );
+  }
   
   const fetchPendingInvitations = async () => {
     try {
       setLoadingInvitations(true);
       console.log('Fetching pending invitations via edge function...');
       
-      const { data, error } = await supabase.functions.invoke('invite-user', {
+      const { data, error } = await organizationClient.functions.invoke('invite-user', {
         method: 'GET'
       });
       
@@ -71,8 +84,8 @@ const InvitationsManagement = () => {
       setLoading(true);
       console.log('Resending invitation to:', email);
       
-      const { data, error } = await supabase.functions.invoke('invite-user', {
-        body: { email }
+      const { data, error } = await organizationClient.functions.invoke('invite-user', {
+        body: { email, organizationSlug: currentOrganization.slug }
       });
       
       if (error) {
@@ -113,7 +126,7 @@ const InvitationsManagement = () => {
       setLoading(true);
       console.log('Canceling invitation for:', email);
       
-      const { data, error } = await supabase.functions.invoke('invite-user', {
+      const { data, error } = await organizationClient.functions.invoke('invite-user', {
         method: 'DELETE',
         body: { email }
       });
@@ -143,8 +156,8 @@ const InvitationsManagement = () => {
     try {
       console.log('Sending invitation to:', values.email);
       
-      const { data, error } = await supabase.functions.invoke('invite-user', {
-        body: { email: values.email }
+      const { data, error } = await organizationClient.functions.invoke('invite-user', {
+        body: { email: values.email, organizationSlug: currentOrganization.slug }
       });
       
       if (error) {

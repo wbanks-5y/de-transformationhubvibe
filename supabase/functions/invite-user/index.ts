@@ -13,39 +13,29 @@ interface InviteUserRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Generate unique correlation ID for request tracking
   const correlationId = crypto.randomUUID();
   const startTime = Date.now();
   const timestamp = new Date().toISOString();
-  const callerIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-  const userAgent = req.headers.get('user-agent') || 'unknown';
-  const authorization = req.headers.get('authorization') ? 'present' : 'missing';
-  const triggerSource = req.headers.get('x-trigger-source') || 'unknown';
 
   console.log(`[${correlationId}] FUNCTION START`, {
     timestamp,
     method: req.method,
-    callerIp,
-    userAgent: userAgent.substring(0, 100),
-    hasAuthHeader: authorization === 'present',
     origin: req.headers.get('origin') || 'none',
-    triggerSource,
   });
 
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    console.log(`[${correlationId}] FUNCTION END: OPTIONS (CORS preflight)`, {
-      duration: Date.now() - startTime,
-    });
+    console.log(`[${correlationId}] FUNCTION END: OPTIONS (CORS preflight)`);
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error("Missing required environment variables");
+      console.error(`[${correlationId}] Missing required environment variables`);
       return new Response(
         JSON.stringify({
           success: false,
@@ -58,7 +48,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Create admin client with service role key
+    // Create admin client with service role key (tenant DB)
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
@@ -66,19 +56,12 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
 
-    // Handle GET request to fetch pending invitations
+    // ========== GET: Fetch pending invitations ==========
     if (req.method === "GET") {
       console.log(`[${correlationId}] GET: Fetching pending invitations`);
 
       try {
-        // Get all users from auth.users
         const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
-
-        console.log(`[${correlationId}] GET: listUsers result`, {
-          success: !authError,
-          totalUsers: authData?.users?.length || 0,
-          errorMessage: authError?.message
-        });
 
         if (authError) {
           console.error(`[${correlationId}] GET: Error fetching auth users`, authError);
@@ -105,15 +88,7 @@ const handler = async (req: Request): Promise<Response> => {
             status: "pending",
           }));
 
-        console.log(`[${correlationId}] GET: Pending invitations found`, {
-          count: pendingInvitations.length
-        });
-
-        console.log(`[${correlationId}] FUNCTION END: Success`, {
-          method: 'GET',
-          statusCode: 200,
-          totalDuration: Date.now() - startTime,
-        });
+        console.log(`[${correlationId}] GET: Found ${pendingInvitations.length} pending invitations`);
 
         return new Response(
           JSON.stringify({
@@ -127,7 +102,7 @@ const handler = async (req: Request): Promise<Response> => {
           },
         );
       } catch (listError) {
-        console.error("Error in listUsers:", listError);
+        console.error(`[${correlationId}] GET: Error in listUsers:`, listError);
         return new Response(
           JSON.stringify({
             success: true,
@@ -142,7 +117,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // Handle POST request to send invitations
+    // ========== POST: Send invitation ==========
     if (req.method === "POST") {
       console.log(`[${correlationId}] POST: Invite request received`);
       
@@ -150,9 +125,8 @@ const handler = async (req: Request): Promise<Response> => {
       try {
         requestData = await req.json();
         console.log(`[${correlationId}] POST: Request payload`, {
-          email: requestData.email ? `${requestData.email.substring(0, 3)}***@${requestData.email.split('@')[1]}` : 'missing',
+          email: requestData.email ? `${requestData.email.substring(0, 3)}***` : 'missing',
           hasOrgSlug: !!requestData.organizationSlug,
-          payloadKeys: Object.keys(requestData)
         });
       } catch (parseError) {
         console.error(`[${correlationId}] POST: JSON parse error`, parseError);
@@ -183,18 +157,18 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Normalize email for case-insensitive comparison
       const emailNormalized = email.trim().toLowerCase();
 
-      console.log(`[${correlationId}] POST: Attempting to invite user`, {
-        email: `${emailNormalized.substring(0, 3)}***@${emailNormalized.split('@')[1]}`
+      console.log(`[${correlationId}] POST: Inviting user`, {
+        email: `${emailNormalized.substring(0, 3)}***`,
+        organizationSlug: organizationSlug || 'default',
       });
 
       try {
-        // First, get all users with increased page size to avoid pagination issues
+        // Check if user already exists
         const { data: authData, error: authError } = await supabase.auth.admin.listUsers({
           page: 1,
-          perPage: 1000 // Increase limit to catch more users
+          perPage: 1000,
         });
 
         if (authError) {
@@ -213,81 +187,43 @@ const handler = async (req: Request): Promise<Response> => {
 
         const existingUser = authData?.users?.find((u) => (u.email || '').toLowerCase() === emailNormalized);
 
-        console.log(`[${correlationId}] POST: User existence check`, {
-          email: emailNormalized.substring(0, 3) + '***@' + emailNormalized.split('@')[1],
-          userFound: !!existingUser,
-          isConfirmed: existingUser ? !!existingUser.email_confirmed_at : null,
-          totalUsersChecked: authData?.users?.length || 0
-        });
-
-        // Check if user exists - don't delete, just proceed with token creation
-        if (existingUser) {
-          console.log(`[${correlationId}] POST: Existing user found, proceeding with token creation (idempotent)`, {
-            email: emailNormalized.substring(0, 3) + '***@' + emailNormalized.split('@')[1],
-            userId: existingUser.id,
-            wasConfirmed: !!existingUser.email_confirmed_at
-          });
-        } else {
-          console.log(`[${correlationId}] POST: No existing user found, will create new user after token`);
+        if (existingUser?.email_confirmed_at) {
+          console.log(`[${correlationId}] POST: User already exists and is confirmed`);
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: "User already exists in this organization",
+            }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            },
+          );
         }
 
-        // Proceed with invitation
-        const rawOrigin = req.headers.get("origin");
+        // Build redirect URL
+        const origin = req.headers.get("origin") || supabaseUrl.replace('//', '//app.');
+        const redirectTo = `${origin}/auth/callback`;
 
-        // Strict validation: only accept exact matches or use hardcoded default with double hyphen
-        let cleanOrigin = "https://preview--transformationhubvibe.lovable.app";
+        console.log(`[${correlationId}] POST: Calling inviteUserByEmail with redirectTo: ${redirectTo}`);
 
-        if (rawOrigin) {
-          // Log raw origin for debugging
-          console.log(`Raw origin received: ${rawOrigin}`);
-          console.log(
-            `Raw origin char codes: ${[...rawOrigin].map((c) => `${c}:U+${c.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0")}`).join(", ")}`,
-          );
-
-          // Replace ANY dash-like Unicode characters with regular hyphen
-          const normalized = rawOrigin
-            .replace(/[\u2010-\u2015\u2212]/g, "-") // All dash variants (hyphen, en-dash, em-dash, etc.)
-            .replace(/–/g, "--") // En-dash to double hyphen
-            .replace(/—/g, "--") // Em-dash to double hyphen
-            .replace(/([^:]\/)\/+/g, "$1"); // Remove double slashes (except after protocol)
-
-          console.log(`Normalized origin: ${normalized}`);
-
-          // Only use if it contains the expected domain pattern
-          if (normalized.includes("transformationhubvibe.lovable.app")) {
-            cleanOrigin = normalized;
-          } else {
-            console.warn(`Origin does not match expected domain, using default: ${cleanOrigin}`);
+        // Invite user via Supabase Auth
+        const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
+          emailNormalized,
+          {
+            redirectTo,
+            data: {
+              organization_slug: organizationSlug || 'default',
+            },
           }
-        } else {
-          console.log(`No origin header, using default: ${cleanOrigin}`);
-        }
+        );
 
-        // Redirect to set-password page with organization context
-        // Use query parameter so it doesn't conflict with Supabase's hash tokens
-        const redirectTo = organizationSlug
-          ? `${cleanOrigin}/set-password?org=${encodeURIComponent(organizationSlug)}`
-          : `${cleanOrigin}/set-password`;
-
-        console.log(`[${correlationId}] POST: Final redirect URL`, { redirectTo });
-        
-        console.log(`[${correlationId}] POST: Calling auth.admin.inviteUserByEmail`, {
-          email: `${email.substring(0, 3)}***@${email.split('@')[1]}`,
-          redirectTo,
-          hasOrgSlug: !!organizationSlug,
-          timestamp: new Date().toISOString()
-        });
-
-        // Step 1: Create custom invitation token in management DB
-        const managementUrl = Deno.env.get("MANAGEMENT_SUPABASE_URL");
-        const managementKey = Deno.env.get("MANAGEMENT_SUPABASE_ANON_KEY");
-
-        if (!managementUrl || !managementKey) {
-          console.error(`[${correlationId}] POST: Missing management DB credentials`);
+        if (inviteError) {
+          console.error(`[${correlationId}] POST: Error inviting user:`, inviteError);
           return new Response(
             JSON.stringify({
               success: false,
-              error: "Server configuration error - management credentials missing",
+              error: inviteError.message || "Failed to send invitation",
             }),
             {
               status: 500,
@@ -296,55 +232,51 @@ const handler = async (req: Request): Promise<Response> => {
           );
         }
 
-        const managementClient = createClient(managementUrl, managementKey);
+        console.log(`[${correlationId}] POST: Invitation created successfully`);
 
-        console.log(`[${correlationId}] POST: Creating custom invitation token in management DB`);
+        // Optional: Send custom email via Resend
+        if (resendApiKey) {
+          try {
+            console.log(`[${correlationId}] POST: Sending invitation email via Resend`);
+            
+            const resendResponse = await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${resendApiKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                from: "noreply@yourdomain.com", // Update this with your verified domain
+                to: [emailNormalized],
+                subject: `You're invited to join ${organizationSlug || 'the organization'}`,
+                html: `
+                  <h1>Welcome!</h1>
+                  <p>You've been invited to join ${organizationSlug || 'our organization'}.</p>
+                  <p>Click the button below to accept your invitation and create your account:</p>
+                  <p><a href="${redirectTo}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Accept Invitation</a></p>
+                  <p>If the button doesn't work, copy and paste this link into your browser:</p>
+                  <p>${redirectTo}</p>
+                `,
+              }),
+            });
 
-        const { data: tokenData, error: tokenError } = await managementClient
-          .from("invitation_tokens")
-          .insert({
-            email: emailNormalized,
-            organization_slug: organizationSlug || "default",
-            organization_supabase_url: supabaseUrl,
-            organization_supabase_anon_key: Deno.env.get("SUPABASE_ANON_KEY") || "",
-          })
-          .select("token")
-          .single();
-
-        if (tokenError) {
-          console.error(`[${correlationId}] POST: Failed to create invitation token`, tokenError);
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: "Failed to create invitation",
-            }),
-            {
-              status: 500,
-              headers: { "Content-Type": "application/json", ...corsHeaders },
-            },
-          );
+            if (!resendResponse.ok) {
+              console.warn(`[${correlationId}] POST: Resend email failed:`, await resendResponse.text());
+            } else {
+              console.log(`[${correlationId}] POST: Resend email sent successfully`);
+            }
+          } catch (emailError) {
+            console.warn(`[${correlationId}] POST: Error sending email via Resend:`, emailError);
+            // Don't fail the request if email fails
+          }
         }
 
-        // Step 2: Construct custom invitation URL
-        // This URL will be used by the Management App to send the invitation email
-        const invitationUrl = `${cleanOrigin}/verify-invitation?code=${tokenData.token}&org=${encodeURIComponent(organizationSlug || "default")}`;
-
-        console.log(`[${correlationId}] POST: Custom invitation created successfully`, {
-          userEmail: `${emailNormalized.substring(0, 3)}***@${emailNormalized.split('@')[1]}`,
-          invitationUrl: invitationUrl.substring(0, 50) + "...",
-        });
-
-        console.log(`[${correlationId}] FUNCTION END: Success`, {
-          method: 'POST',
-          statusCode: 200,
-          totalDuration: Date.now() - startTime,
-        });
+        console.log(`[${correlationId}] FUNCTION END: Success (${Date.now() - startTime}ms)`);
 
         return new Response(
           JSON.stringify({
             success: true,
-            message: "Invitation created successfully",
-            invitationUrl, // Return this URL to Management App for email sending
+            message: "Invitation sent successfully",
             correlationId,
           }),
           {
@@ -353,7 +285,7 @@ const handler = async (req: Request): Promise<Response> => {
           },
         );
       } catch (inviteError) {
-        console.error("Unexpected error during invitation:", inviteError);
+        console.error(`[${correlationId}] POST: Unexpected error:`, inviteError);
         return new Response(
           JSON.stringify({
             success: false,
@@ -367,7 +299,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // Handle DELETE request to cancel invitations
+    // ========== DELETE: Cancel invitation ==========
     if (req.method === "DELETE") {
       console.log(`[${correlationId}] DELETE: Cancel invitation request`);
       
@@ -405,16 +337,14 @@ const handler = async (req: Request): Promise<Response> => {
 
       const emailNormalized = email.trim().toLowerCase();
 
-      console.log(`[${correlationId}] DELETE: Target email`, {
-        email: `${emailNormalized.substring(0, 3)}***@${emailNormalized.split('@')[1]}`
-      });
+      console.log(`[${correlationId}] DELETE: Cancelling invitation for ${emailNormalized.substring(0, 3)}***`);
 
       try {
-        // First get the user by email
+        // Find the user by email
         const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
 
         if (authError) {
-          console.error("Error fetching users for deletion:", authError);
+          console.error(`[${correlationId}] DELETE: Error fetching users:`, authError);
           return new Response(
             JSON.stringify({
               success: true,
@@ -434,30 +364,25 @@ const handler = async (req: Request): Promise<Response> => {
           const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
 
           if (deleteError) {
-            console.error("Error deleting user:", deleteError);
+            console.error(`[${correlationId}] DELETE: Error deleting user:`, deleteError);
             return new Response(
               JSON.stringify({
-                success: true,
-                message: "Invitation cancelled (auth deletion failed but processed)",
-                warning: deleteError.message,
+                success: false,
+                error: "Failed to cancel invitation",
               }),
               {
-                status: 200,
+                status: 500,
                 headers: { "Content-Type": "application/json", ...corsHeaders },
               },
             );
           }
 
-          console.log("User deleted successfully from auth");
+          console.log(`[${correlationId}] DELETE: User deleted successfully`);
         } else {
-          console.log("User not found in auth or already confirmed");
+          console.log(`[${correlationId}] DELETE: User not found or already confirmed`);
         }
 
-        console.log(`[${correlationId}] FUNCTION END: Success`, {
-          method: 'DELETE',
-          statusCode: 200,
-          totalDuration: Date.now() - startTime,
-        });
+        console.log(`[${correlationId}] FUNCTION END: Success (${Date.now() - startTime}ms)`);
 
         return new Response(
           JSON.stringify({
@@ -471,22 +396,21 @@ const handler = async (req: Request): Promise<Response> => {
           },
         );
       } catch (deleteError) {
-        console.error("Error in delete operation:", deleteError);
-
+        console.error(`[${correlationId}] DELETE: Error:`, deleteError);
         return new Response(
           JSON.stringify({
-            success: true,
-            message: "Invitation cancelled (processed with warnings)",
-            warning: "Auth deletion may have failed",
+            success: false,
+            error: "Error cancelling invitation",
           }),
           {
-            status: 200,
+            status: 500,
             headers: { "Content-Type": "application/json", ...corsHeaders },
           },
         );
       }
     }
 
+    // Method not allowed
     return new Response(
       JSON.stringify({
         success: false,
@@ -497,12 +421,12 @@ const handler = async (req: Request): Promise<Response> => {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       },
     );
-  } catch (error: any) {
-    console.error("Error in invite-user function:", error);
+  } catch (error) {
+    console.error(`[${correlationId}] FUNCTION ERROR:`, error);
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || "Internal server error",
+        error: "Internal server error",
       }),
       {
         status: 500,
