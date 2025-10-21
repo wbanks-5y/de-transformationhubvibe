@@ -27,7 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastResetTime, setLastResetTime] = useState<number | null>(null);
-  const { organizationClient, clearOrganization } = useOrganization();
+  const { organizationClient, clearOrganization, updateOrganizationAuth } = useOrganization();
   const navigate = useNavigate();
 
   // Initialize last reset time from localStorage
@@ -55,6 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data: { session } } = await organizationClient.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
+      updateOrganizationAuth(session?.access_token);
       setLoading(false);
     };
 
@@ -66,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Auth state changed:', event);
         setSession(session);
         setUser(session?.user ?? null);
+        updateOrganizationAuth(session?.access_token);
         setLoading(false);
       }
     );
