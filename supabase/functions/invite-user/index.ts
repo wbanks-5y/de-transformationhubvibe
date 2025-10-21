@@ -10,6 +10,8 @@ const corsHeaders = {
 interface InviteUserRequest {
   email: string;
   organizationSlug?: string;
+  forceFallback?: boolean;
+  cc?: string[];
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -167,7 +169,7 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      const { email, organizationSlug }: InviteUserRequest = requestData;
+      const { email, organizationSlug, forceFallback = false, cc = [] }: InviteUserRequest = requestData;
 
       if (!email || typeof email !== "string") {
         return new Response(
@@ -265,7 +267,7 @@ const handler = async (req: Request): Promise<Response> => {
         
         if (resendApiKey) {
           try {
-            console.log(`[${correlationId}] POST: Sending invitation email via Resend`);
+            console.log(`[${correlationId}] POST: Sending invitation email via Resend`, { forceFallback, hasCc: cc.length > 0 });
             
             const emailSubject = `You're invited to join ${organizationSlug || 'the organization'}`;
             const emailTextContent = `You've been invited to join ${organizationSlug || 'our organization'}. Open this link to accept your invitation and create your account: ${redirectTo}`;
@@ -294,28 +296,59 @@ const handler = async (req: Request): Promise<Response> => {
               </html>
             `;
             
-            // Try primary domain first
+            const primaryFrom = "5Y Technology <noreply@5ytest.com>";
+            const fallbackFrom = "Lovable <onboarding@resend.dev>";
+            const fromAddress = forceFallback ? fallbackFrom : primaryFrom;
+            let sendPath = forceFallback ? 'fallback' : 'primary';
+            
+            console.log(`[${correlationId}] POST: Using ${sendPath} sender: ${fromAddress}`);
+            
+            const emailPayload: any = {
+              from: fromAddress,
+              to: [emailNormalized],
+              subject: emailSubject,
+              text: emailTextContent,
+              html: emailHtmlContent,
+            };
+            
+            if (forceFallback) {
+              emailPayload.reply_to = "noreply@5ytest.com";
+            }
+            
+            if (cc.length > 0) {
+              emailPayload.cc = cc;
+              console.log(`[${correlationId}] POST: Adding CC recipients:`, cc);
+            }
+            
             let resendResponse = await fetch("https://api.resend.com/emails", {
               method: "POST",
               headers: {
                 "Authorization": `Bearer ${resendApiKey}`,
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({
-                from: "5Y Technology <noreply@5ytest.com>",
+              body: JSON.stringify(emailPayload),
+            });
+
+            let resendBody = await resendResponse.json().catch(() => null);
+            console.log(`[${correlationId}] POST: ${sendPath} Resend response (${resendResponse.status}):`, resendBody);
+            
+            // If primary domain fails with 4xx and we didn't force fallback, try fallback
+            if (!forceFallback && !resendResponse.ok && resendResponse.status >= 400 && resendResponse.status < 500) {
+              console.log(`[${correlationId}] POST: Primary send failed (${resendResponse.status}). Attempting automatic fallback...`);
+              sendPath = 'fallback';
+              
+              const fallbackPayload: any = {
+                from: fallbackFrom,
+                reply_to: "noreply@5ytest.com",
                 to: [emailNormalized],
                 subject: emailSubject,
                 text: emailTextContent,
                 html: emailHtmlContent,
-              }),
-            });
-
-            let resendBody = await resendResponse.json().catch(() => null);
-            
-            // If primary domain fails with 4xx, try fallback
-            if (!resendResponse.ok && resendResponse.status >= 400 && resendResponse.status < 500) {
-              console.log(`[${correlationId}] POST: Primary Resend send failed (${resendResponse.status}). Response:`, resendBody);
-              console.log(`[${correlationId}] POST: Attempting fallback to onboarding@resend.dev`);
+              };
+              
+              if (cc.length > 0) {
+                fallbackPayload.cc = cc;
+              }
               
               resendResponse = await fetch("https://api.resend.com/emails", {
                 method: "POST",
@@ -323,14 +356,7 @@ const handler = async (req: Request): Promise<Response> => {
                   "Authorization": `Bearer ${resendApiKey}`,
                   "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                  from: "Lovable <onboarding@resend.dev>",
-                  reply_to: "noreply@5ytest.com",
-                  to: [emailNormalized],
-                  subject: emailSubject,
-                  text: emailTextContent,
-                  html: emailHtmlContent,
-                }),
+                body: JSON.stringify(fallbackPayload),
               });
               
               resendBody = await resendResponse.json().catch(() => null);
@@ -341,7 +367,7 @@ const handler = async (req: Request): Promise<Response> => {
               console.error(`[${correlationId}] POST: Resend email failed with status ${resendResponse.status}. Body:`, resendBody);
             } else {
               resendEmailId = resendBody?.id || null;
-              console.log(`[${correlationId}] POST: Resend email sent successfully. Email ID: ${resendEmailId}`);
+              console.log(`[${correlationId}] POST: Resend email sent successfully via ${sendPath}. Email ID: ${resendEmailId}`);
             }
           } catch (resendError: any) {
             console.error(`[${correlationId}] POST: Error sending email via Resend:`, resendError);
@@ -357,6 +383,7 @@ const handler = async (req: Request): Promise<Response> => {
             message: "Invitation sent successfully",
             resendEmailId,
             correlationId,
+            sendPath: resendEmailId ? (forceFallback ? 'fallback' : 'primary') : undefined,
           }),
           {
             status: 200,

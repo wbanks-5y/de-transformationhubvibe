@@ -13,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Mail, X, RefreshCw } from "lucide-react";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -35,6 +34,10 @@ const InvitationsManagement = () => {
   const [loading, setLoading] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [loadingInvitations, setLoadingInvitations] = useState(false);
+  const [forceFallback, setForceFallback] = useState(false);
+  const [checkEmailId, setCheckEmailId] = useState("");
+  const [showStatusDialog, setShowStatusDialog] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<any>(null);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -85,7 +88,7 @@ const InvitationsManagement = () => {
       console.log('Resending invitation to:', email);
       
       const { data, error } = await organizationClient.functions.invoke('invite-user', {
-        body: { email, organizationSlug: currentOrganization.slug }
+        body: { email, organizationSlug: currentOrganization.slug, forceFallback }
       });
       
       if (error) {
@@ -115,8 +118,8 @@ const InvitationsManagement = () => {
       // Show success with debug info if available
       let successMessage = `Invitation resent to ${email}. Click refresh to update the list.`;
       if (data?.resendEmailId || data?.correlationId) {
-        console.log(`[Debug] Resend Email ID: ${data?.resendEmailId || 'N/A'}, Correlation ID: ${data?.correlationId || 'N/A'}`);
-        successMessage += ` [ID: ${data?.resendEmailId || data?.correlationId || 'N/A'}]`;
+        console.log(`[Debug] Resend Email ID: ${data?.resendEmailId || 'N/A'}, Correlation ID: ${data?.correlationId || 'N/A'}, Send Path: ${data?.sendPath || 'N/A'}`);
+        successMessage += ` [ID: ${data?.resendEmailId || data?.correlationId || 'N/A'}] (${data?.sendPath || 'primary'})`;
       }
       
       toast.success(successMessage, {
@@ -166,7 +169,7 @@ const InvitationsManagement = () => {
       console.log('Sending invitation to:', values.email);
       
       const { data, error } = await organizationClient.functions.invoke('invite-user', {
-        body: { email: values.email, organizationSlug: currentOrganization.slug }
+        body: { email: values.email, organizationSlug: currentOrganization.slug, forceFallback }
       });
       
       if (error) {
@@ -199,8 +202,8 @@ const InvitationsManagement = () => {
       // Show success with debug info if available
       let successMessage = `Invitation sent to ${values.email}. Click refresh to see it in the list.`;
       if (data?.resendEmailId || data?.correlationId) {
-        console.log(`[Debug] Resend Email ID: ${data?.resendEmailId || 'N/A'}, Correlation ID: ${data?.correlationId || 'N/A'}`);
-        successMessage += ` [ID: ${data?.resendEmailId || data?.correlationId || 'N/A'}]`;
+        console.log(`[Debug] Resend Email ID: ${data?.resendEmailId || 'N/A'}, Correlation ID: ${data?.correlationId || 'N/A'}, Send Path: ${data?.sendPath || 'N/A'}`);
+        successMessage += ` [ID: ${data?.resendEmailId || data?.correlationId || 'N/A'}] (${data?.sendPath || 'primary'})`;
       }
       
       toast.success(successMessage, {
@@ -213,6 +216,35 @@ const InvitationsManagement = () => {
       setLoading(false);
     }
   }
+
+  const checkDeliveryStatus = async () => {
+    if (!checkEmailId.trim()) {
+      toast.error("Please enter an email ID");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { data, error } = await organizationClient.functions.invoke('resend-email-status', {
+        body: { emailId: checkEmailId }
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        toast.error(data.error);
+        setEmailStatus({ error: data.error, details: data.details });
+      } else {
+        setEmailStatus(data.email);
+        toast.success(`Email status: ${data.email?.last_event || 'unknown'}`);
+      }
+    } catch (error) {
+      console.error('Error checking status:', error);
+      toast.error("Failed to check email status");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="container px-4 py-6 mx-auto space-y-6">
@@ -247,6 +279,16 @@ const InvitationsManagement = () => {
                     </FormItem>
                   )}
                 />
+                <div className="flex items-center space-x-2 mb-4">
+                  <Checkbox 
+                    id="forceFallback" 
+                    checked={forceFallback}
+                    onCheckedChange={(checked) => setForceFallback(checked === true)}
+                  />
+                  <Label htmlFor="forceFallback" className="text-sm cursor-pointer">
+                    Use test sender (onboarding@resend.dev)
+                  </Label>
+                </div>
                 <Button 
                   type="submit" 
                   className="w-full"
@@ -256,6 +298,84 @@ const InvitationsManagement = () => {
                 </Button>
               </form>
             </Form>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Delivery Debug</CardTitle>
+            <CardDescription>Check the delivery status of a sent invitation</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter Resend email ID"
+                value={checkEmailId}
+                onChange={(e) => setCheckEmailId(e.target.value)}
+              />
+              <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
+                <DialogTrigger asChild>
+                  <Button onClick={checkDeliveryStatus} disabled={loading}>
+                    <Search className="h-4 w-4 mr-2" />
+                    Check
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Email Delivery Status</DialogTitle>
+                    <DialogDescription>
+                      Resend API response for email ID: {checkEmailId}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-3">
+                    {emailStatus ? (
+                      <>
+                        {emailStatus.error ? (
+                          <div className="text-destructive">
+                            <p className="font-semibold">Error:</p>
+                            <p>{emailStatus.error}</p>
+                            {emailStatus.details && (
+                              <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto">
+                                {JSON.stringify(emailStatus.details, null, 2)}
+                              </pre>
+                            )}
+                          </div>
+                        ) : (
+                          <>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <p className="font-semibold text-sm">Status:</p>
+                                <p className="text-sm">{emailStatus.last_event || 'No events yet'}</p>
+                              </div>
+                              <div>
+                                <p className="font-semibold text-sm">To:</p>
+                                <p className="text-sm">{emailStatus.to?.join(', ') || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="font-semibold text-sm">From:</p>
+                                <p className="text-sm">{emailStatus.from || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="font-semibold text-sm">Created:</p>
+                                <p className="text-sm">{emailStatus.created_at ? new Date(emailStatus.created_at).toLocaleString() : 'N/A'}</p>
+                              </div>
+                            </div>
+                            <details className="mt-4">
+                              <summary className="cursor-pointer font-semibold text-sm">Full Response</summary>
+                              <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto max-h-60">
+                                {JSON.stringify(emailStatus, null, 2)}
+                              </pre>
+                            </details>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-muted-foreground text-sm">Enter an email ID and click Check</p>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardContent>
         </Card>
         
