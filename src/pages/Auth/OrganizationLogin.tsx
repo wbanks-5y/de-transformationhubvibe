@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useOrganization } from "@/context/OrganizationContext";
-import { getOrganizationClient } from "@/lib/supabase/organization-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,8 +18,8 @@ const OrganizationLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Verify we have an organization context (client will be created after login)
-    if (!currentOrganization) {
+    // Verify we have an organization context
+    if (!currentOrganization || !organizationClient) {
       toast.error("Organization not found", {
         description: "Please start from the beginning."
       });
@@ -34,7 +33,7 @@ const OrganizationLogin = () => {
       navigate("/");
       return;
     }
-  }, [currentOrganization, organizationSlug, navigate]);
+  }, [currentOrganization, organizationClient, organizationSlug, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +43,7 @@ const OrganizationLogin = () => {
       return;
     }
 
-    if (!currentOrganization) {
+    if (!organizationClient) {
       toast.error("Organization not initialized");
       navigate("/");
       return;
@@ -53,15 +52,8 @@ const OrganizationLogin = () => {
     setIsLoading(true);
 
     try {
-      // Create or use existing client for login (without auth token for pre-login)
-      const loginClient = organizationClient || getOrganizationClient(
-        currentOrganization.supabase_url,
-        currentOrganization.supabase_anon_key,
-        currentOrganization.slug
-      );
-
       // Authenticate against the organization's specific database
-      const { data, error } = await loginClient.auth.signInWithPassword({
+      const { data, error } = await organizationClient.auth.signInWithPassword({
         email,
         password,
       });

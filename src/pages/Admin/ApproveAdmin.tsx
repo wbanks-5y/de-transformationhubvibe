@@ -17,7 +17,7 @@ const ApproveAdmin = () => {
   const [result, setResult] = useState<string | null>(null);
   const [dbHealth, setDbHealth] = useState<DatabaseHealthStatus | null>(null);
   const [isCheckingHealth, setIsCheckingHealth] = useState<boolean>(false);
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const { organizationClient } = useOrganization();
   const queryClient = useQueryClient();
 
@@ -57,27 +57,6 @@ const ApproveAdmin = () => {
       toast.error("Please enter an email address");
       return;
     }
-
-    // Check if we have a valid session with access token
-    if (!session?.access_token) {
-      toast.error("Authentication required", {
-        description: "Please ensure you are logged in with a valid session"
-      });
-      console.error('[ApproveAdmin] No access token available:', {
-        hasSession: !!session,
-        hasUser: !!user,
-        userId: user?.id
-      });
-      return;
-    }
-
-    console.log('[ApproveAdmin] Attempting admin approval:', {
-      targetEmail: email,
-      currentUserId: user?.id,
-      currentUserEmail: user?.email,
-      hasAccessToken: !!session?.access_token,
-      tokenLength: session?.access_token?.length
-    });
     
     try {
       setIsLoading(true);
