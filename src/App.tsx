@@ -18,8 +18,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ScrollToTop />
-        <OrganizationProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <OrganizationProvider>
             <UserPreferencesProvider>
               <div className="min-h-screen bg-background">
                 <AppRoutes />
@@ -27,8 +27,8 @@ function App() {
                 <Toaster />
               </div>
             </UserPreferencesProvider>
-          </AuthProvider>
-        </OrganizationProvider>
+          </OrganizationProvider>
+        </AuthProvider>
       </BrowserRouter>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
