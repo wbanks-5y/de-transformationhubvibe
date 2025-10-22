@@ -14,6 +14,8 @@ export interface AuthUser {
 
 export interface UserProfile {
   id: string;
+  email: string | null;
+  created_at: string | null;
   full_name: string | null;
   company: string | null;
   job_title: string | null;
@@ -25,6 +27,7 @@ export interface UserProfile {
 
 /**
  * Fetch all users from Supabase Auth API via edge function
+ * @deprecated No longer used - user data is fetched directly from profiles table
  */
 export const fetchAllAuthUsers = async (): Promise<AuthUser[]> => {
   try {

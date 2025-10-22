@@ -3,13 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { customerClient } from "@/lib/supabase/customer-client";
 import { useOrganization } from '@/context/OrganizationContext';
 import { toast } from "sonner";
-import { fetchAllAuthUsers, fetchAllProfiles, fetchAllUserRoles, updateUserProfile, updateUserStatus, deleteUser } from "@/services/adminService";
+import { fetchAllProfiles, fetchAllUserRoles, updateUserProfile, updateUserStatus, deleteUser } from "@/services/adminService";
 
 interface User {
   id: string;
   email?: string;
   created_at: string;
-  last_sign_in_at?: string | null;
   full_name?: string;
   company?: string;
   job_title?: string;
@@ -79,63 +78,18 @@ export const useUserManagement = () => {
         return [];
       });
       
-      // Fetch all auth users via the new edge function
-      const allAuthUsers = await fetchAllAuthUsers().catch(err => {
-        console.error("Auth users error:", err);
-        throw err;
-      });
-      
-      console.log("Auth users fetched:", allAuthUsers?.length);
-      
-      // Create a combined user list
-      let usersList: User[] = [];
-      
-      // Process all auth users
-      for (const authUser of allAuthUsers) {
-        // Find corresponding profile if it exists
-        const profile = profiles?.find(p => p.id === authUser.id);
-        
-        usersList.push({
-          id: authUser.id,
-          email: authUser.email,
-          created_at: authUser.created_at || new Date().toISOString(),
-          last_sign_in_at: authUser.last_sign_in_at,
-          full_name: profile?.full_name || authUser.raw_user_meta_data?.full_name || authUser.email,
-          company: profile?.company || authUser.raw_user_meta_data?.company || '',
-          job_title: profile?.job_title || '',
-          phone: profile?.phone || '',
-          status: profile?.status || 'pending',
-          tier: profile?.tier || 'essential'
-        });
-      }
-      
-      // Add any profiles that might not have corresponding auth users
-      if (profiles && profiles.length > 0) {
-        for (const profile of profiles) {
-          // Skip if this profile is already added
-          if (usersList.some(user => user.id === profile.id)) {
-            continue;
-          }
-          
-          usersList.push({
-            id: profile.id,
-            email: `${profile.id.slice(0, 8)}@example.com`, // Fallback email
-            created_at: profile.updated_at || new Date().toISOString(),
-            last_sign_in_at: null,
-            full_name: profile.full_name || 'Unknown user',
-            company: profile.company || '',
-            job_title: profile.job_title || '',
-            phone: profile.phone || '',
-            status: profile.status || 'pending',
-            tier: profile.tier || 'essential'
-          });
-        }
-      }
-      
-      // Ensure we don't have duplicate users
-      usersList = usersList.filter((user, index, self) => 
-        index === self.findIndex((u) => u.id === user.id)
-      );
+      // Build user list directly from profiles (no edge function needed)
+      const usersList: User[] = (profiles || []).map(profile => ({
+        id: profile.id,
+        email: profile.email || `${profile.id.slice(0, 8)}@unknown.com`,
+        created_at: profile.created_at || new Date().toISOString(),
+        full_name: profile.full_name || 'Unknown user',
+        company: profile.company || '',
+        job_title: profile.job_title || '',
+        phone: profile.phone || '',
+        status: profile.status || 'pending',
+        tier: profile.tier || 'essential'
+      }));
       
       console.log("Final users list:", usersList.length);
       setUsers(usersList);
