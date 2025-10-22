@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { customerClient } from "@/lib/supabase/customer-client";
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Type definitions
@@ -32,7 +31,7 @@ export const fetchAllAuthUsers = async (): Promise<AuthUser[]> => {
     console.log('Fetching all auth users via edge function...');
     
     // Use the get-auth-users edge function
-    const { data, error } = await customerClient.functions.invoke('get-auth-users', {
+    const { data, error } = await supabase.functions.invoke('get-auth-users', {
       method: 'GET'
     });
     
@@ -198,7 +197,7 @@ export const deleteUser = async (id: string): Promise<void> => {
     console.log(`Deleting user ${id}...`);
     
     // Call the edge function to delete the user with proper permissions
-    const { data, error } = await customerClient.functions.invoke('delete-user', {
+    const { data, error } = await supabase.functions.invoke('delete-user', {
       body: { userId: id }
     });
     
