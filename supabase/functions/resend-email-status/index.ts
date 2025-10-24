@@ -18,7 +18,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const resendApiKey = Deno.env.get('RESEND_API_KEY' || 'RESEND_API_KEY_V2');
+    const resendApiKey = Deno.env.get('RESEND_API_KEY') || Deno.env.get('RESEND_API_KEY_V2');
     if (!resendApiKey) {
       console.error('resend-email-status: RESEND_API_KEY or RESEND_API_KEY_V2 not found');
       return new Response(
