@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from '@/context/OrganizationContext';
 import { toast } from "sonner";
 import { fetchAllProfiles, fetchAllUserRoles, updateUserProfile, updateUserStatus, deleteUser } from "@/services/adminService";
-import { callEdgeFunction } from "@/lib/supabase/edge-function-helper";
 
 interface User {
   id: string;
@@ -31,29 +29,6 @@ export const useUserManagement = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPendingInvitations = async () => {
-    try {
-      console.log('Fetching pending invitations via edge function...');
-      
-      const { data, error } = await callEdgeFunction(
-        organizationClient,
-        'invite-user',
-        { method: 'GET' }
-      );
-      
-      if (error) {
-        console.error('Error fetching invitations:', error);
-        toast.error("Failed to fetch pending invitations");
-        return;
-      }
-
-      console.log('Pending invitations response:', data);
-      setPendingInvitations(data.invitations || []);
-    } catch (error: any) {
-      console.error('Error fetching pending invitations:', error);
-      toast.error("Failed to fetch pending invitations");
-    }
-  };
 
   const fetchUsers = async () => {
     if (!organizationClient) {
@@ -175,13 +150,11 @@ export const useUserManagement = () => {
 
   const refreshData = () => {
     fetchUsers();
-    fetchPendingInvitations();
   };
 
   useEffect(() => {
     if (organizationClient) {
       fetchUsers();
-      fetchPendingInvitations();
     }
   }, [organizationClient]);
 
