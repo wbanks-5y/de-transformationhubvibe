@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useOrganization } from "@/context/OrganizationContext";
 import { toast } from "sonner";
+import { callEdgeFunction } from "@/lib/supabase/edge-function-helper";
 import {
   Card,
   CardContent,
@@ -66,9 +67,11 @@ const InvitationsManagement = () => {
       setLoadingInvitations(true);
       console.log('Fetching pending invitations via edge function...');
       
-      const { data, error } = await organizationClient.functions.invoke('invite-user', {
-        method: 'GET'
-      });
+      const { data, error } = await callEdgeFunction(
+        organizationClient,
+        'invite-user',
+        { method: 'GET' }
+      );
       
       if (error) {
         console.error('Error fetching invitations:', error);
@@ -91,9 +94,14 @@ const InvitationsManagement = () => {
       setLoading(true);
       console.log('Resending invitation to:', email);
       
-      const { data, error } = await organizationClient.functions.invoke('invite-user', {
-        body: { email, organizationSlug: currentOrganization.slug, forceFallback }
-      });
+      const { data, error } = await callEdgeFunction(
+        organizationClient,
+        'invite-user',
+        {
+          method: 'POST',
+          body: { email, organizationSlug: currentOrganization.slug, forceFallback }
+        }
+      );
       
       if (error) {
         console.error('Error resending invitation:', error);
@@ -142,10 +150,14 @@ const InvitationsManagement = () => {
       setLoading(true);
       console.log('Canceling invitation for:', email);
       
-      const { data, error } = await organizationClient.functions.invoke('invite-user', {
-        method: 'DELETE',
-        body: { email }
-      });
+      const { data, error } = await callEdgeFunction(
+        organizationClient,
+        'invite-user',
+        {
+          method: 'DELETE',
+          body: { email }
+        }
+      );
       
       if (error) {
         console.error('Error canceling invitation:', error);
@@ -172,9 +184,14 @@ const InvitationsManagement = () => {
     try {
       console.log('Sending invitation to:', values.email);
       
-      const { data, error } = await organizationClient.functions.invoke('invite-user', {
-        body: { email: values.email, organizationSlug: currentOrganization.slug, forceFallback }
-      });
+      const { data, error } = await callEdgeFunction(
+        organizationClient,
+        'invite-user',
+        {
+          method: 'POST',
+          body: { email: values.email, organizationSlug: currentOrganization.slug, forceFallback }
+        }
+      );
       
       if (error) {
         console.error('Error invoking invite function:', error);
@@ -229,9 +246,14 @@ const InvitationsManagement = () => {
 
     try {
       setLoading(true);
-      const { data, error } = await organizationClient.functions.invoke('resend-email-status', {
-        body: { emailId: checkEmailId }
-      });
+      const { data, error } = await callEdgeFunction(
+        organizationClient,
+        'resend-email-status',
+        {
+          method: 'POST',
+          body: { emailId: checkEmailId }
+        }
+      );
 
       if (error) throw error;
 

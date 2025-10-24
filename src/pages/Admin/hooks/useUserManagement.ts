@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from '@/context/OrganizationContext';
 import { toast } from "sonner";
 import { fetchAllProfiles, fetchAllUserRoles, updateUserProfile, updateUserStatus, deleteUser } from "@/services/adminService";
+import { callEdgeFunction } from "@/lib/supabase/edge-function-helper";
 
 interface User {
   id: string;
@@ -34,9 +35,11 @@ export const useUserManagement = () => {
     try {
       console.log('Fetching pending invitations via edge function...');
       
-      const { data, error } = await organizationClient.functions.invoke('invite-user', {
-        method: 'GET'
-      });
+      const { data, error } = await callEdgeFunction(
+        organizationClient,
+        'invite-user',
+        { method: 'GET' }
+      );
       
       if (error) {
         console.error('Error fetching invitations:', error);
