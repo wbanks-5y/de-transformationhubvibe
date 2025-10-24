@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from '@/context/OrganizationContext';
 import { toast } from "sonner";
 import { fetchAllProfiles, fetchAllUserRoles, updateUserProfile, updateUserStatus, deleteUser } from "@/services/adminService";
@@ -23,64 +24,111 @@ interface PendingInvitation {
 }
 
 export const useUserManagement = () => {
-  const { organizationClient } = useOrganization();
+  const { organizationClient, currentOrganization } = useOrganization();
   const [users, setUsers] = useState<User[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-
-  const fetchUsers = async () => {
-    if (!organizationClient) {
-      console.error("Organization client not available");
-      return;
-    }
-    
-    setLoading(true);
-    setError(null);
+  const fetchPendingInvitations = async () => {
     try {
-      console.log("Fetching users...");
+      console.log('Fetching pending invitations via edge function...');
       
-      // Fetch all profiles first
-      const profiles = await fetchAllProfiles(organizationClient).catch(err => {
-        console.error("Profiles error:", err);
-        throw err;
+      const { data, error } = await organizationClient.functions.invoke('invite-user', {
+        method: 'GET'
       });
       
-      console.log("Profiles fetched:", profiles?.length);
-      
-      // Fetch all user roles
-      const userRoles = await fetchAllUserRoles(organizationClient).catch(err => {
-        console.error("User roles error:", err);
-        return [];
-      });
-      
-      // Build user list directly from profiles (no edge function needed)
-      const usersList: User[] = (profiles || []).map(profile => ({
-        id: profile.id,
-        email: profile.email || `${profile.id.slice(0, 8)}@unknown.com`,
-        created_at: profile.created_at || new Date().toISOString(),
-        full_name: profile.full_name || 'Unknown user',
-        company: profile.company || '',
-        job_title: profile.job_title || '',
-        phone: profile.phone || '',
-        status: profile.status || 'pending',
-        tier: profile.tier || 'essential'
-      }));
-      
-      console.log("Final users list:", usersList.length);
-      setUsers(usersList);
-      
+      if (error) {
+        console.error('Error fetching invitations:', error);
+        toast.error("Failed to fetch pending invitations");
+        return;
+      }
+
+      console.log('Pending invitations response:', data);
+      setPendingInvitations(data.invitations || []);
     } catch (error: any) {
-      console.error("Error in fetchUsers:", error);
-      setError(error.message || "Failed to load users");
-      toast.error("Error fetching users", {
-        description: error.message || "Failed to load users"
-      });
-    } finally {
-      setLoading(false);
+      console.error('Error fetching pending invitations:', error);
+      toast.error("Failed to fetch pending invitations");
     }
   };
+
+  const fetchUsers = async () => {
+  if (!organizationClient) {
+    console.error("Organization client not available");
+    return;
+  }
+  
+  setLoading(true);
+  setError(null);
+  try {
+    // ========== DIAGNOSTIC BREADCRUMBS START ==========
+    console.log("=== [DIAGNOSTIC] Fetching Users ===");
+    console.log("[ORG] Current organization:", currentOrganization?.slug);
+    console.log("[ORG] Supabase URL:", (organizationClient as any).supabaseUrl);
+    console.log("[ORG] Using client for:", currentOrganization?.name);
+    
+    // PROBE: Test user_roles table access
+    console.log("[PROBE] Testing user_roles table access...");
+    const { data: probeData, error: probeError } = await organizationClient
+      .from('user_roles')
+      .select('id')
+      .limit(1);
+    
+    if (probeError) {
+      console.error("[PROBE] ❌ user_roles table error:", {
+        code: probeError.code,
+        message: probeError.message,
+        details: probeError.details,
+        hint: probeError.hint
+      });
+    } else {
+      console.log("[PROBE] ✅ user_roles table accessible, rows:", probeData?.length || 0);
+    }
+    // ========== DIAGNOSTIC BREADCRUMBS END ==========
+    
+    console.log("Fetching users...");
+    
+    // Fetch all profiles first
+    const profiles = await fetchAllProfiles(organizationClient).catch(err => {
+      console.error("Profiles error:", err);
+      throw err;
+    });
+    
+    console.log("Profiles fetched:", profiles?.length);
+    
+    // Fetch all user roles
+    const userRoles = await fetchAllUserRoles(organizationClient).catch(err => {
+      console.error("User roles error:", err);
+      return [];
+    });
+    
+    // Build user list directly from profiles (no edge function needed)
+    const usersList: User[] = (profiles || []).map(profile => ({
+      id: profile.id,
+      email: profile.email || `${profile.id.slice(0, 8)}@unknown.com`,
+      created_at: profile.created_at || new Date().toISOString(),
+      full_name: profile.full_name || 'Unknown user',
+      company: profile.company || '',
+      job_title: profile.job_title || '',
+      phone: profile.phone || '',
+      status: profile.status || 'pending',
+      tier: profile.tier || 'essential'
+    }));
+    
+    console.log("Final users list:", usersList.length);
+    setUsers(usersList);
+    
+  } catch (error: any) {
+    console.error("Error in fetchUsers:", error);
+    setError(error.message || "Failed to load users");
+    toast.error("Error fetching users", {
+      description: error.message || "Failed to load users"
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleUpdateUser = async (id: string, userData: any) => {
     if (!organizationClient) {
@@ -150,11 +198,13 @@ export const useUserManagement = () => {
 
   const refreshData = () => {
     fetchUsers();
+    fetchPendingInvitations();
   };
 
   useEffect(() => {
     if (organizationClient) {
       fetchUsers();
+      fetchPendingInvitations();
     }
   }, [organizationClient]);
 
