@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { customerClient } from "@/lib/supabase/customer-client";
 import { useOrganization } from "@/context/OrganizationContext";
 import { toast } from "sonner";
 import {
@@ -67,7 +66,7 @@ const InvitationsManagement = () => {
       setLoadingInvitations(true);
       console.log('Fetching pending invitations via edge function...');
       
-      const { data, error } = await customerClient.functions.invoke('invite-user', {
+      const { data, error } = await organizationClient.functions.invoke('invite-user', {
         method: 'GET'
       });
       
@@ -92,7 +91,7 @@ const InvitationsManagement = () => {
       setLoading(true);
       console.log('Resending invitation to:', email);
       
-      const { data, error } = await customerClient.functions.invoke('invite-user', {
+      const { data, error } = await organizationClient.functions.invoke('invite-user', {
         body: { email, organizationSlug: currentOrganization.slug, forceFallback }
       });
       
@@ -143,7 +142,7 @@ const InvitationsManagement = () => {
       setLoading(true);
       console.log('Canceling invitation for:', email);
       
-      const { data, error } = await customerClient.functions.invoke('invite-user', {
+      const { data, error } = await organizationClient.functions.invoke('invite-user', {
         method: 'DELETE',
         body: { email }
       });
@@ -173,7 +172,7 @@ const InvitationsManagement = () => {
     try {
       console.log('Sending invitation to:', values.email);
       
-      const { data, error } = await customerClient.functions.invoke('invite-user', {
+      const { data, error } = await organizationClient.functions.invoke('invite-user', {
         body: { email: values.email, organizationSlug: currentOrganization.slug, forceFallback }
       });
       

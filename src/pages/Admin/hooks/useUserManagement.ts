@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { customerClient } from "@/lib/supabase/customer-client";
 import { useOrganization } from '@/context/OrganizationContext';
 import { toast } from "sonner";
 import { fetchAllProfiles, fetchAllUserRoles, updateUserProfile, updateUserStatus, deleteUser } from "@/services/adminService";
@@ -35,7 +34,7 @@ export const useUserManagement = () => {
     try {
       console.log('Fetching pending invitations via edge function...');
       
-      const { data, error } = await customerClient.functions.invoke('invite-user', {
+      const { data, error } = await organizationClient.functions.invoke('invite-user', {
         method: 'GET'
       });
       
