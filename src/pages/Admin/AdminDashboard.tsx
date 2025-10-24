@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   Users, 
@@ -180,21 +180,21 @@ const AdminDashboard: React.FC = () => {
               {group.sections.map((section) => {
                 const Icon = section.icon;
                 return (
-                  <Card key={section.path} className="hover:shadow-lg transition-shadow">
-                    <CardHeader>
+                  <Card key={section.path} className="h-full flex flex-col hover:shadow-lg transition-shadow">
+                    <CardHeader className="flex-grow">
                       <div className={`w-12 h-12 rounded-lg ${section.color} flex items-center justify-center mb-4`}>
                         <Icon className="h-6 w-6" />
                       </div>
                       <CardTitle className="text-lg">{section.title}</CardTitle>
                       <CardDescription>{section.description}</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardFooter>
                       <Button asChild className="w-full">
                         <Link to={section.path}>
                           Access {section.title}
                         </Link>
                       </Button>
-                    </CardContent>
+                    </CardFooter>
                   </Card>
                 );
               })}
