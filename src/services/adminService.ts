@@ -115,7 +115,7 @@ export const updateUserProfile = async (
     .from('profiles')
     .select()
     .eq('id', id)
-    .single();
+    .maybeSingle();
     
   if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "not found" error
     throw fetchError;
@@ -162,7 +162,7 @@ export const updateUserStatus = async (id: string, status: string, client?: Supa
     .from('profiles')
     .select()
     .eq('id', id)
-    .single();
+    .maybeSingle();
     
   if (fetchError && fetchError.code === 'PGRST116') {
     // Profile doesn't exist, create it with the new status
