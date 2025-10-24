@@ -34,7 +34,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    const resendApiKey = Deno.env.get("RESEND_API_KEY || RESEND_API_KEY_V2");
 
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error(`[${correlationId}] Missing required environment variables`);
@@ -262,7 +262,7 @@ const handler = async (req: Request): Promise<Response> => {
         console.log(`[${correlationId}] POST: Invitation created successfully`);
 
         // Optional: Send custom email via Resend
-        console.log(`[${correlationId}] POST: RESEND_API_KEY ${resendApiKey ? 'FOUND' : 'NOT FOUND'} - ${resendApiKey ? 'Will send email via Resend' : 'Skipping custom email'}`);
+        console.log(`[${correlationId}] POST: RESEND_API_KEY || RESEND_API_KEY_V2 ${resendApiKey ? 'FOUND' : 'NOT FOUND'} - ${resendApiKey ? 'Will send email via Resend' : 'Skipping custom email'}`);
         let resendEmailId = null;
         
         if (resendApiKey) {

@@ -40,11 +40,11 @@ async function sendWelcomeEmail(
   return { sent: false, error: 'Email sending temporarily disabled' };
   
   /* ORIGINAL CODE - TO BE RESTORED:
-  const resendApiKey = Deno.env.get('RESEND_API_KEY');
+  const resendApiKey = Deno.env.get('RESEND_API_KEY' || 'RESEND_API_KEY_V2');
   
   if (!resendApiKey) {
-    console.warn('RESEND_API_KEY not configured - skipping email notification');
-    return { sent: false, error: 'RESEND_API_KEY not configured' };
+    console.warn('RESEND_API_KEY not configured - skipping email notification' || 'RESEND_API_KEY_v2 not configured - skipping email notification');
+    return { sent: false, error: 'RESEND_API_KEY or 'RESEND_API_KEY_V2' not configured' };
   }
 
   try {

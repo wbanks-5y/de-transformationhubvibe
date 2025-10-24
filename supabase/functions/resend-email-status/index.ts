@@ -18,9 +18,9 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    const resendApiKey = Deno.env.get('RESEND_API_KEY' || 'RESEND_API_KEY_V2');
     if (!resendApiKey) {
-      console.error('resend-email-status: RESEND_API_KEY not found');
+      console.error('resend-email-status: RESEND_API_KEY or RESEND_API_KEY_V2 not found');
       return new Response(
         JSON.stringify({ error: 'Resend API key not configured' }),
         { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
