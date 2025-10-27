@@ -117,7 +117,7 @@ const SetPassword = () => {
       );
 
       // Find the user by email and validate invitation token
-      const { data: { users }, error: listError } = await orgAdminClient.auth.admin.listUsers();
+      const { data: usersData, error: listError } = await orgAdminClient.auth.admin.listUsers();
       
       if (listError) {
         console.error("Failed to list users:", listError);
@@ -125,7 +125,8 @@ const SetPassword = () => {
         return;
       }
 
-      const invitedUser = users?.find(u => 
+      const users = usersData?.users || [];
+      const invitedUser = users.find(u => 
         u.email?.toLowerCase() === email.toLowerCase() && 
         u.user_metadata?.invitation_token === invitationToken
       );
