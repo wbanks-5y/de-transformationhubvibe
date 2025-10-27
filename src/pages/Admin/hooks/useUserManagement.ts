@@ -4,6 +4,7 @@ import { useOrganization } from '@/context/OrganizationContext';
 import { toast } from "sonner";
 import { fetchAllProfiles, fetchAllUserRoles, updateUserProfile, updateUserStatus, deleteUser } from "@/services/adminService";
 import { callEdgeFunction } from '@/lib/supabase/edge-function-helper';
+import { getInviteUserFunctionName } from '@/lib/supabase/organization-helpers';
 
 interface User {
   id: string;
@@ -25,7 +26,7 @@ interface PendingInvitation {
 }
 
 export const useUserManagement = () => {
-  const { organizationClient } = useOrganization();
+  const { organizationClient, currentOrganization } = useOrganization();
   const [users, setUsers] = useState<User[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -33,10 +34,13 @@ export const useUserManagement = () => {
 
   const fetchPendingInvitations = async () => {
   try {
+    if (!currentOrganization) return;
+    
     console.log('Fetching pending invitations via edge function...');
+    const functionName = getInviteUserFunctionName(currentOrganization.supabase_url);
     const { data, error } = await callEdgeFunction(
       organizationClient,
-      'invite-user',
+      functionName,
       { method: 'GET' }
     );
     

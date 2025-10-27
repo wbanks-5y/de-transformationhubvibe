@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { useOrganization } from "@/context/OrganizationContext";
 import { toast } from "sonner";
 import { callEdgeFunction } from "@/lib/supabase/edge-function-helper";
+import { getInviteUserFunctionName } from "@/lib/supabase/organization-helpers";
 import {
   Card,
   CardContent,
@@ -67,9 +68,10 @@ const InvitationsManagement = () => {
       setLoadingInvitations(true);
       console.log('Fetching pending invitations via edge function...');
       
+      const functionName = getInviteUserFunctionName(currentOrganization.supabase_url);
       const { data, error } = await callEdgeFunction(
         organizationClient,
-        'invite-user',
+        functionName,
         { method: 'GET' }
       );
       
@@ -94,9 +96,10 @@ const InvitationsManagement = () => {
       setLoading(true);
       console.log('Resending invitation to:', email);
       
+      const functionName = getInviteUserFunctionName(currentOrganization.supabase_url);
       const { data, error } = await callEdgeFunction(
         organizationClient,
-        'invite-user',
+        functionName,
         {
           method: 'POST',
           body: { email, organizationSlug: currentOrganization.slug, forceFallback }
@@ -150,9 +153,10 @@ const InvitationsManagement = () => {
       setLoading(true);
       console.log('Canceling invitation for:', email);
       
+      const functionName = getInviteUserFunctionName(currentOrganization.supabase_url);
       const { data, error } = await callEdgeFunction(
         organizationClient,
-        'invite-user',
+        functionName,
         {
           method: 'DELETE',
           body: { email }
@@ -184,9 +188,10 @@ const InvitationsManagement = () => {
     try {
       console.log('Sending invitation to:', values.email);
       
+      const functionName = getInviteUserFunctionName(currentOrganization.supabase_url);
       const { data, error } = await callEdgeFunction(
         organizationClient,
-        'invite-user',
+        functionName,
         {
           method: 'POST',
           body: { email: values.email, organizationSlug: currentOrganization.slug, forceFallback }
