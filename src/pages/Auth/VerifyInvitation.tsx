@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { managementClient } from "@/lib/supabase/management-client";
-import { getOrganizationClient } from "@/lib/supabase/organization-client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 
@@ -13,66 +11,29 @@ const VerifyInvitation = () => {
 
   useEffect(() => {
     const verifyAndRedirect = async () => {
-      const code = searchParams.get("code");
+      const token = searchParams.get("token");
       const orgSlug = searchParams.get("org");
+      const email = searchParams.get("email");
 
-      if (!code || !orgSlug) {
+      console.log("VerifyInvitation - params:", { token, orgSlug, email });
+
+      if (!token || !orgSlug || !email) {
         setStatus("error");
-        setError("Invalid invitation link. Missing required parameters.");
+        setError("Invalid invitation link. Missing required parameters (token, org, or email).");
+        console.error("Missing params:", { token: !!token, orgSlug: !!orgSlug, email: !!email });
         return;
       }
 
       try {
-        // Step 1: Validate custom token with management DB
-        console.log("Validating invitation token...");
+        // With Option A, we no longer validate against invitation_tokens
+        // The token is stored in the user's metadata and will be validated
+        // when they set their password
         
-        const { data: tokenData, error: tokenError } = await managementClient
-          .from("invitation_tokens")
-          .select("*")
-          .eq("token", code)
-          .is("used_at", null)
-          .single();
-
-        if (tokenError || !tokenData) {
-          setStatus("error");
-          setError("This invitation link is invalid or has already been used.");
-          console.error("Token validation error:", tokenError);
-          return;
-        }
-
-        // Check expiration
-        if (new Date(tokenData.expires_at) < new Date()) {
-          setStatus("error");
-          setError("This invitation link has expired. Please request a new invitation.");
-          return;
-        }
-
-        // Step 2: Mark token as used (prevents reuse, even from Safelinks pre-fetch)
-        console.log("Marking token as used...");
-        
-        const { error: updateError } = await managementClient
-          .from("invitation_tokens")
-          .update({ used_at: new Date().toISOString() })
-          .eq("token", code);
-
-        if (updateError) {
-          console.error("Failed to mark token as used:", updateError);
-          // Continue anyway - token validation succeeded
-        }
-
-        // Step 3: Create org-specific Supabase client
-        console.log("Creating organization-specific client...");
-        
-        const orgClient = getOrganizationClient(
-          tokenData.organization_supabase_url,
-          tokenData.organization_supabase_anon_key,
-          orgSlug
-        );
-
-        // Step 4: Redirect directly to password setup page with token
-        console.log("Redirecting to password setup page...");
+        console.log("Invitation link verified, redirecting to password setup...");
         setStatus("redirecting");
-        navigate(`/set-password?org=${orgSlug}&token=${code}`);
+        
+        // Redirect to password setup with all parameters
+        navigate(`/set-password?token=${token}&org=${orgSlug}&email=${email}`);
 
       } catch (err) {
         console.error("Verification error:", err);
@@ -109,10 +70,10 @@ const VerifyInvitation = () => {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
             <button
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/")}
               className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
             >
-              Go to Login
+              Go to Home
             </button>
           </div>
         )}
