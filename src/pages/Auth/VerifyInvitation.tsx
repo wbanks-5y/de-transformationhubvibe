@@ -1,83 +1,87 @@
-import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2 } from "lucide-react";
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const VerifyInvitation = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState<"verifying" | "error" | "redirecting">("verifying");
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const verifyAndRedirect = async () => {
-      const token = searchParams.get("token");
-      const orgSlug = searchParams.get("org");
-      const email = searchParams.get("email");
-
-      console.log("VerifyInvitation - params:", { token, orgSlug, email });
-
-      if (!token || !orgSlug || !email) {
-        setStatus("error");
-        setError("Invalid invitation link. Missing required parameters (token, org, or email).");
-        console.error("Missing params:", { token: !!token, orgSlug: !!orgSlug, email: !!email });
-        return;
-      }
-
       try {
-        // With Option A, we no longer validate against invitation_tokens
-        // The token is stored in the user's metadata and will be validated
-        // when they set their password
-        
-        console.log("Invitation link verified, redirecting to password setup...");
-        setStatus("redirecting");
-        
-        // Redirect to password setup with all parameters
-        navigate(`/set-password?token=${token}&org=${orgSlug}&email=${email}`);
+        // Extract parameters from URL
+        const token = searchParams.get('code') || searchParams.get('token');
+        const org = searchParams.get('org');
+        const email = searchParams.get('email');
 
-      } catch (err) {
-        console.error("Verification error:", err);
-        setStatus("error");
-        setError("An unexpected error occurred. Please try again or contact support.");
+        console.log('VerifyInvitation - params:', { 
+          token: !!token, 
+          org, 
+          email 
+        });
+
+        // Validate all required parameters are present
+        if (!token) {
+          setError('Invalid invitation link: missing token');
+          return;
+        }
+
+        if (!org) {
+          setError('Invalid invitation link: missing organization');
+          return;
+        }
+
+        if (!email) {
+          setError('Invalid invitation link: missing email');
+          return;
+        }
+
+        // Redirect to set-password page with all parameters
+        console.log('Redirecting to set-password with params:', { token, org, email });
+        navigate(`/set-password?token=${token}&org=${org}&email=${encodeURIComponent(email)}`);
+
+      } catch (err: any) {
+        console.error('Verification error:', err);
+        setError(err.message || 'An error occurred while verifying your invitation');
       }
     };
 
     verifyAndRedirect();
   }, [searchParams, navigate]);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
-        {status === "verifying" && (
-          <div className="text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Verifying Invitation</h2>
-            <p className="text-gray-600">Please wait while we verify your invitation...</p>
-          </div>
-        )}
-
-        {status === "redirecting" && (
-          <div className="text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Redirecting...</h2>
-            <p className="text-gray-600">Taking you to the password setup page...</p>
-          </div>
-        )}
-
-        {status === "error" && (
-          <div>
-            <Alert variant="destructive" className="mb-4">
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <CardTitle>Verification Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
-            <button
-              onClick={() => navigate("/")}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
-            >
-              Go to Home
-            </button>
-          </div>
-        )}
+          </CardContent>
+        </Card>
       </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <CardTitle>Verifying Invitation</CardTitle>
+          <CardDescription>
+            Please wait while we verify your invitation and redirect you...
+          </CardDescription>
+        </CardHeader>
+      </Card>
     </div>
   );
 };

@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useOrganization } from '@/context/OrganizationContext';
+import { managementClient } from '@/lib/supabase/management-client';
 
 const SetPassword = () => {
   const [password, setPassword] = useState('');
@@ -20,7 +21,7 @@ const SetPassword = () => {
   const [isValidating, setIsValidating] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
   const [organizationSlug, setOrganizationSlug] = useState<string | null>(null);
-  const [orgClient, setOrgClient] = useState<SupabaseClient<Database> | null>(null);
+  const [invitationToken, setInvitationToken] = useState<string | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { setOrganization } = useOrganization();
@@ -28,7 +29,6 @@ const SetPassword = () => {
   useEffect(() => {
     const validateInvitation = async () => {
       try {
-        // Extract parameters from query string
         const token = searchParams.get("token");
         const orgSlug = searchParams.get("org");
         const emailParam = searchParams.get("email");
@@ -43,18 +43,23 @@ const SetPassword = () => {
 
         setEmail(emailParam);
         setOrganizationSlug(orgSlug);
+        setInvitationToken(token);
 
-        // For Option A, we need to look up the organization details
-        // from the management database to get the Supabase credentials
-        
-        // Since we don't have managementClient available here,
-        // we'll fetch organization details via a dedicated edge function
-        // OR we can embed them in the invitation email URL
-        
-        // For now, we'll need to call an edge function to get org details
-        // Let's create a simple validation that will be completed when setting password
-        
-        console.log("Invitation validated successfully for:", emailParam);
+        // Fetch organization details from management database
+        const { data: orgData, error: orgError } = await managementClient
+          .from('organizations')
+          .select('*')
+          .eq('slug', orgSlug)
+          .single();
+
+        if (orgError || !orgData) {
+          console.error("Organization not found:", orgError);
+          setError("Organization not found. Please contact support.");
+          setIsValidating(false);
+          return;
+        }
+
+        console.log("Organization found, invitation validated successfully");
         setIsValidating(false);
         
       } catch (err) {
@@ -80,11 +85,7 @@ const SetPassword = () => {
       return;
     }
 
-    const token = searchParams.get("token");
-    const orgSlug = searchParams.get("org");
-    const emailParam = searchParams.get("email");
-
-    if (!token || !orgSlug || !emailParam) {
+    if (!invitationToken || !organizationSlug || !email) {
       setError("Invalid invitation link. Missing required parameters.");
       return;
     }
@@ -93,55 +94,78 @@ const SetPassword = () => {
     setError(null);
 
     try {
-      console.log("Completing invitation for:", emailParam);
+      console.log("Completing invitation for:", email);
 
-      // Call the complete-invitation edge function from the management database
-      // This function will:
-      // 1. Validate the invitation token from user metadata
-      // 2. Update the user's password
-      // 3. Confirm the user's email
-      // 4. Return session tokens
-      
-      const managementUrl = 'https://mcbvzxnkhcohiieeovdp.supabase.co';
-      const managementAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jYnZ6eG5raGNvaGlpZWVvdmRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNjE2MDYsImV4cCI6MjA1MzgzNzYwNn0.SzcVIhiWRl9J0-Rxy9KXiYDyT3E6rMujoZMmpMNJpDc';
-      
-      const response = await fetch(`${managementUrl}/functions/v1/complete-invitation`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${managementAnonKey}`,
-        },
-        body: JSON.stringify({
-          email: emailParam,
-          password: password,
-          organizationSlug: orgSlug,
-          invitationToken: token,
-        }),
-      });
+      // Fetch organization details first
+      const { data: orgData, error: orgError } = await managementClient
+        .from('organizations')
+        .select('*')
+        .eq('slug', organizationSlug)
+        .single();
 
-      const completeData = await response.json();
-
-      if (!response.ok || !completeData?.success) {
-        console.error("Failed to complete invitation:", completeData);
-        setError(completeData?.error || "Failed to set password. Please try again.");
+      if (orgError || !orgData) {
+        console.error("Organization not found:", orgError);
+        setError("Organization not found. Please contact support.");
         return;
       }
 
-      console.log("Invitation completed successfully, setting session...");
-
-      // Create organization-specific client and set session
-      const orgClient = getOrganizationClient(
-        completeData.orgUrl,
-        completeData.orgAnonKey,
-        orgSlug
+      // Create organization client with service role key for admin operations
+      const orgAdminClient = getOrganizationClient(
+        orgData.supabase_url,
+        orgData.supabase_anon_key,
+        organizationSlug
       );
 
-      const { error: sessionError } = await orgClient.auth.setSession({
-        access_token: completeData.accessToken,
-        refresh_token: completeData.refreshToken,
+      // Find the user by email and validate invitation token
+      const { data: { users }, error: listError } = await orgAdminClient.auth.admin.listUsers();
+      
+      if (listError) {
+        console.error("Failed to list users:", listError);
+        setError("Failed to validate invitation. Please try again.");
+        return;
+      }
+
+      const invitedUser = users?.find(u => 
+        u.email?.toLowerCase() === email.toLowerCase() && 
+        u.user_metadata?.invitation_token === invitationToken
+      );
+
+      if (!invitedUser) {
+        console.error("Invitation not found or token mismatch");
+        setError("Invalid or expired invitation token.");
+        return;
+      }
+
+      console.log("Invitation validated, updating password...");
+
+      // Update user password and confirm email
+      const { data: updateData, error: updateError } = await orgAdminClient.auth.admin.updateUserById(
+        invitedUser.id,
+        {
+          password: password,
+          email_confirm: true,
+          user_metadata: {
+            ...invitedUser.user_metadata,
+            invitation_completed_at: new Date().toISOString()
+          }
+        }
+      );
+
+      if (updateError) {
+        console.error("Password update error:", updateError);
+        setError("Failed to set password. Please try again.");
+        return;
+      }
+
+      console.log("Password updated, creating session...");
+
+      // Sign in with the new password to get session tokens
+      const { data: sessionData, error: sessionError } = await orgAdminClient.auth.signInWithPassword({
+        email: email,
+        password: password
       });
 
-      if (sessionError) {
+      if (sessionError || !sessionData.session) {
         console.error("Session error:", sessionError);
         setError("Failed to establish session. Please try logging in.");
         return;
@@ -149,11 +173,13 @@ const SetPassword = () => {
 
       // Set organization context
       setOrganization({
-        id: completeData.organizationId,
-        name: completeData.organizationName || orgSlug,
-        slug: orgSlug,
-        supabase_url: completeData.orgUrl,
-        supabase_anon_key: completeData.orgAnonKey,
+        id: orgData.id,
+        name: orgData.name,
+        slug: organizationSlug,
+        supabase_url: orgData.supabase_url,
+        supabase_anon_key: orgData.supabase_anon_key,
+        created_at: orgData.created_at,
+        updated_at: orgData.updated_at
       });
 
       console.log("Session established, redirecting to home...");
