@@ -34,7 +34,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const resendApiKey = Deno.env.get("RESEND_API_KEY || RESEND_API_KEY_V2");
+    const resendApiKey = Deno.env.get("RESEND_API_KEY") || Deno.env.get("RESEND_API_KEY_V2");
 
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error(`[${correlationId}] Missing required environment variables`);
@@ -297,7 +297,7 @@ const handler = async (req: Request): Promise<Response> => {
             `;
             
             const primaryFrom = "5Y Technology <noreply@5ytest.com>";
-            const fallbackFrom = "Lovable <onboarding@resend.dev>";
+            const fallbackFrom = "Transformation Suite <onboarding@resend.dev>";
             const fromAddress = forceFallback ? fallbackFrom : primaryFrom;
             let sendPath = forceFallback ? 'fallback' : 'primary';
             
