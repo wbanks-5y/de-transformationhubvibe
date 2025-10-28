@@ -113,8 +113,11 @@ const SetPassword = () => {
         return;
       }
 
-      // Call the edge function to do admin work server-side (secure)
-      const { data: completeData, error: completeError } = await appSupabase.functions.invoke("complete-invitation", {
+      // Create a client for the target organization's Supabase project
+      const orgClient = createClient(orgData.supabase_url, orgData.supabase_anon_key);
+
+      // Call the edge function on the target org's project (secure)
+      const { data: completeData, error: completeError } = await orgClient.functions.invoke("complete-invitation", {
         body: {
           email,
           password,
