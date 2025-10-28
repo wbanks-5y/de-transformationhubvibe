@@ -114,7 +114,11 @@ const SetPassword = () => {
       }
 
       // Call the edge function on the target org's project (secure) using direct fetch
-      const functionUrl = `${orgData.supabase_url}/functions/v1/complete-invitation`;
+      // Ensure the URL has the https:// protocol (management DB stores URLs without it)
+      const baseUrl = orgData.supabase_url.startsWith('http') 
+        ? orgData.supabase_url 
+        : `https://${orgData.supabase_url}`;
+      const functionUrl = `${baseUrl}/functions/v1/complete-invitation`;
       console.log("Calling edge function at:", functionUrl);
 
       const response = await fetch(functionUrl, {
