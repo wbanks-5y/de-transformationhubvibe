@@ -113,18 +113,34 @@ const SetPassword = () => {
         return;
       }
 
-      // Create a client for the target organization's Supabase project
-      const orgClient = createClient(orgData.supabase_url, orgData.supabase_anon_key);
+      // Call the edge function on the target org's project (secure) using direct fetch
+      const functionUrl = `${orgData.supabase_url}/functions/v1/complete-invitation`;
+      console.log("Calling edge function at:", functionUrl);
 
-      // Call the edge function on the target org's project (secure)
-      const { data: completeData, error: completeError } = await orgClient.functions.invoke("complete-invitation", {
-        body: {
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${orgData.supabase_anon_key}`,
+          'apikey': orgData.supabase_anon_key,
+        },
+        body: JSON.stringify({
           email,
           password,
           organizationSlug,
           invitationToken,
-        },
+        }),
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Edge function error:", response.status, errorText);
+        setError(`Failed to complete invitation: ${response.status} ${errorText}`);
+        return;
+      }
+
+      const completeData = await response.json();
+      const completeError = completeData.error ? { message: completeData.error } : null;
 
       if (completeError || !completeData?.success) {
         console.error("complete-invitation error:", completeError, completeData);
