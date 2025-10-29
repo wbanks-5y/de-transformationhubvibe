@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { assignAdminRoleByEmail, isUserAdmin } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useOrganization } from '@/context/OrganizationContext';
@@ -10,9 +11,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { checkDatabaseHealth, type DatabaseHealthStatus } from '@/lib/supabase/database-health';
 import { CheckCircle2, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { useNonAdminUsers } from './hooks/useNonAdminUsers';
 
 const ApproveAdmin = () => {
-  const [email, setEmail] = useState<string>('');
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [result, setResult] = useState<string | null>(null);
   const [dbHealth, setDbHealth] = useState<DatabaseHealthStatus | null>(null);
@@ -20,6 +22,7 @@ const ApproveAdmin = () => {
   const { user } = useAuth();
   const { organizationClient } = useOrganization();
   const queryClient = useQueryClient();
+  const { users: nonAdminUsers, isLoading: isLoadingUsers, refetch: refetchUsers } = useNonAdminUsers();
 
   const checkHealth = async () => {
     if (!organizationClient) return;
@@ -37,13 +40,19 @@ const ApproveAdmin = () => {
   };
 
   const handleBootstrapFirstAdmin = async () => {
-    if (!email || !organizationClient) {
-      toast.error("Please enter an email address");
+    if (!selectedUserId || !organizationClient) {
+      toast.error("Please select a user");
       return;
     }
 
     if (dbHealth && dbHealth.adminCount > 0) {
       toast.error("Admin already exists. Use normal approval process.");
+      return;
+    }
+
+    const selectedUser = nonAdminUsers.find(u => u.id === selectedUserId);
+    if (!selectedUser) {
+      toast.error("Selected user not found");
       return;
     }
     
@@ -53,10 +62,19 @@ const ApproveAdmin = () => {
   };
 
   const handleApproveAdmin = async () => {
-    if (!email || !organizationClient) {
-      toast.error("Please enter an email address");
+    if (!selectedUserId || !organizationClient) {
+      toast.error("Please select a user");
       return;
     }
+    
+    // Find the selected user to get their email
+    const selectedUser = nonAdminUsers.find(u => u.id === selectedUserId);
+    if (!selectedUser) {
+      toast.error("Selected user not found");
+      return;
+    }
+
+    const email = selectedUser.email;
     
     try {
       setIsLoading(true);
@@ -67,6 +85,12 @@ const ApproveAdmin = () => {
       if (result.success) {
         setResult('✓ Success! User has been made an admin.');
         toast.success("Admin role assigned successfully");
+        
+        // Reset selection
+        setSelectedUserId('');
+        
+        // Refresh non-admin users list
+        await refetchUsers();
         
         // Refresh health status
         await checkHealth();
@@ -469,16 +493,32 @@ GRANT EXECUTE ON FUNCTION public.bootstrap_first_admin(text) TO authenticated;`}
               </div>
               
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">
-                  Email Address
+                <label htmlFor="bootstrap-user-select" className="text-sm font-medium">
+                  Select User to Bootstrap as Admin
                 </label>
-                <Input
-                  id="email"
-                  type="email" 
-                  placeholder="user@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
+                {isLoadingUsers ? (
+                  <div className="p-3 text-sm text-muted-foreground">
+                    Loading users...
+                  </div>
+                ) : nonAdminUsers.length === 0 ? (
+                  <div className="p-3 text-sm text-muted-foreground bg-muted rounded-md">
+                    No users available. Please ensure users are registered.
+                  </div>
+                ) : (
+                  <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                    <SelectTrigger id="bootstrap-user-select">
+                      <SelectValue placeholder="Select a user to bootstrap as admin..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {nonAdminUsers.map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.full_name || 'Unnamed User'} ({user.email})
+                          {user.company && ` - ${user.company}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               
               {result && (
@@ -491,7 +531,7 @@ GRANT EXECUTE ON FUNCTION public.bootstrap_first_admin(text) TO authenticated;`}
           <CardFooter>
             <Button
               onClick={handleBootstrapFirstAdmin}
-              disabled={isLoading || !email}
+              disabled={isLoading || !selectedUserId || isLoadingUsers || nonAdminUsers.length === 0}
               className="w-full"
             >
               {isLoading ? (
@@ -515,16 +555,32 @@ GRANT EXECUTE ON FUNCTION public.bootstrap_first_admin(text) TO authenticated;`}
           <CardContent>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">
-                  Email Address
+                <label htmlFor="user-select" className="text-sm font-medium">
+                  Select User to Promote
                 </label>
-                <Input
-                  id="email"
-                  type="email" 
-                  placeholder="user@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
+                {isLoadingUsers ? (
+                  <div className="p-3 text-sm text-muted-foreground">
+                    Loading users...
+                  </div>
+                ) : nonAdminUsers.length === 0 ? (
+                  <div className="p-3 text-sm text-muted-foreground bg-muted rounded-md">
+                    No users available to promote. All users are already admins.
+                  </div>
+                ) : (
+                  <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                    <SelectTrigger id="user-select">
+                      <SelectValue placeholder="Select a user to promote to admin..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {nonAdminUsers.map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.full_name || 'Unnamed User'} ({user.email})
+                          {user.company && ` - ${user.company}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               
               {result && (
@@ -537,7 +593,7 @@ GRANT EXECUTE ON FUNCTION public.bootstrap_first_admin(text) TO authenticated;`}
           <CardFooter>
             <Button
               onClick={handleApproveAdmin}
-              disabled={isLoading || !email || !dbHealth?.isAdminFunctionExists || !dbHealth?.secureAssignFunctionExists}
+              disabled={isLoading || !selectedUserId || !dbHealth?.isAdminFunctionExists || !dbHealth?.secureAssignFunctionExists || isLoadingUsers || nonAdminUsers.length === 0}
               className="w-full"
             >
               {isLoading ? (
