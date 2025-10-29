@@ -1,11 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS"
 };
-const handler = async (req)=>{
+const handler = async (req: Request)=>{
   const correlationId = crypto.randomUUID();
   const startTime = Date.now();
   const timestamp = new Date().toISOString();
@@ -318,7 +318,15 @@ const handler = async (req)=>{
             const fromAddress = forceFallback ? fallbackFrom : primaryFrom;
             let sendPath = forceFallback ? 'fallback' : 'primary';
             console.log(`[${correlationId}] POST: Using ${sendPath} sender: ${fromAddress}`);
-            const emailPayload = {
+            const emailPayload: {
+              from: string;
+              to: string[];
+              subject: string;
+              text: string;
+              html: string;
+              reply_to?: string;
+              cc?: string[];
+            } = {
               from: fromAddress,
               to: [
                 emailNormalized
@@ -348,7 +356,15 @@ const handler = async (req)=>{
             if (!forceFallback && !resendResponse.ok && resendResponse.status >= 400 && resendResponse.status < 500) {
               console.log(`[${correlationId}] POST: Primary send failed (${resendResponse.status}). Attempting automatic fallback...`);
               sendPath = 'fallback';
-              const fallbackPayload = {
+              const fallbackPayload: {
+                from: string;
+                reply_to: string;
+                to: string[];
+                subject: string;
+                text: string;
+                html: string;
+                cc?: string[];
+              } = {
                 from: fallbackFrom,
                 reply_to: "noreply@5ytest.com",
                 to: [

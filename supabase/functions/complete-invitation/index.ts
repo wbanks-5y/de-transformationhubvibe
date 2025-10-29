@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
@@ -39,7 +39,20 @@ serve(async (req)=>{
     const managementClient = createClient(MANAGEMENT_URL, MANAGEMENT_KEY);
     console.log("[complete-invitation] Connected to Management DB");
     // Step 2: Validate invitation token (WITHOUT FK join to avoid errors)
-    const { data: tokenRow, error: tokenErr } = await managementClient.from("invitation_tokens").select("id, token, email, organization_id, organization_slug, " + "organization_supabase_url, organization_supabase_anon_key, expires_at, used_at").eq("token", invitationToken).eq("email", safeEmail).is("used_at", null).maybeSingle();
+    const { data: tokenRow, error: tokenErr } = await managementClient.from("invitation_tokens").select("id, token, email, organization_id, organization_slug, " + "organization_supabase_url, organization_supabase_anon_key, expires_at, used_at").eq("token", invitationToken).eq("email", safeEmail).is("used_at", null).maybeSingle() as { 
+      data: {
+        id: string;
+        token: string;
+        email: string;
+        organization_id: string;
+        organization_slug: string;
+        organization_supabase_url: string;
+        organization_supabase_anon_key: string;
+        expires_at: string;
+        used_at: string | null;
+      } | null;
+      error: any;
+    };
     if (tokenErr || !tokenRow) {
       console.error("[complete-invitation] Token lookup failed or not found", tokenErr);
       return new Response(JSON.stringify({
@@ -172,7 +185,7 @@ serve(async (req)=>{
     // Step 7: Upsert profile with correct schema fields
     console.log("[complete-invitation] Creating/updating profile");
     // Extract user's name from email for better UX
-    const fullName = safeEmail.split("@")[0].replace(/[._-]/g, " ").split(" ").map((word)=>word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+    const fullName = safeEmail.split("@")[0].replace(/[._-]/g, " ").split(" ").map((word: string)=>word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
     const { error: profileError } = await orgAdminClient.from("profiles").upsert({
       id: userId,
       full_name: fullName,

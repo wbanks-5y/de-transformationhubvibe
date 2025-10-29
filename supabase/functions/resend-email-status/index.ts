@@ -4,7 +4,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
 };
-const handler = async (req)=>{
+const handler = async (req: Request)=>{
   console.log('resend-email-status: Request received', {
     method: req.method
   });
@@ -97,7 +97,7 @@ const handler = async (req)=>{
   } catch (error) {
     console.error('resend-email-status: Error:', error);
     return new Response(JSON.stringify({
-      error: error.message
+      error: error instanceof Error ? error.message : 'Unknown error'
     }), {
       status: 500,
       headers: {
