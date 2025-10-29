@@ -2079,7 +2079,7 @@ export type Database = {
           app_role: Database["public"]["Enums"]["app_role"]
           company: string | null
           created_at: string | null
-          email: string | null
+          email: string
           full_name: string | null
           id: string
           job_title: string | null
@@ -2093,7 +2093,7 @@ export type Database = {
           app_role?: Database["public"]["Enums"]["app_role"]
           company?: string | null
           created_at?: string | null
-          email?: string | null
+          email: string
           full_name?: string | null
           id: string
           job_title?: string | null
@@ -2107,7 +2107,7 @@ export type Database = {
           app_role?: Database["public"]["Enums"]["app_role"]
           company?: string | null
           created_at?: string | null
-          email?: string | null
+          email?: string
           full_name?: string | null
           id?: string
           job_title?: string | null

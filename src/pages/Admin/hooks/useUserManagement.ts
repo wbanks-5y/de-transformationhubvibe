@@ -83,7 +83,7 @@ export const useUserManagement = () => {
       // Build user list directly from profiles (no edge function needed)
       const usersList: User[] = (profiles || []).map(profile => ({
         id: profile.id,
-        email: profile.email || `${profile.id.slice(0, 8)}@unknown.com`,
+        email: profile.email,
         created_at: profile.created_at || new Date().toISOString(),
         full_name: profile.full_name || 'Unknown user',
         company: profile.company || '',
