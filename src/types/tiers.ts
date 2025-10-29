@@ -1,5 +1,5 @@
 
-export type UserTier = 'essential' | 'professional' | 'enterprise' | 'admin';
+export type UserTier = 'essential' | 'professional' | 'enterprise';
 
 export interface TierConfig {
   name: string;
@@ -30,20 +30,10 @@ export const TIER_CONFIGS: Record<UserTier, TierConfig> = {
     description: 'Professional features plus Business Health, Insights, and Myles',
     features: ['Home Dashboard', 'Cockpits', 'Process Intelligence', 'Business Health', 'Insights', 'Myles'],
     order: 3
-  },
-  admin: {
-    name: 'admin',
-    displayName: 'Administrator',
-    description: 'Full system access including administration',
-    features: ['All Features', 'Administration'],
-    order: 4
   }
 };
 
 export const hasRequiredTier = (userTier: UserTier, requiredTier: UserTier): boolean => {
-  // Admin users always have access to everything
-  if (userTier === 'admin') return true;
-  
   const userOrder = TIER_CONFIGS[userTier]?.order || 0;
   const requiredOrder = TIER_CONFIGS[requiredTier]?.order || 0;
   return userOrder >= requiredOrder;

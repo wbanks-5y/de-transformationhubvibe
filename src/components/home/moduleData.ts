@@ -10,7 +10,8 @@ export interface ModuleConfig {
   color: string;
   path: string;
   category: 'analytics' | 'operations' | 'ai';
-  requiredTier: UserTier;
+  requiredTier?: UserTier;
+  isAdmin?: boolean;
   isComingSoon?: boolean;
 }
 
@@ -73,6 +74,6 @@ export const moduleData: ModuleConfig[] = [
     color: 'bg-gray-500',
     path: '/admin',
     category: 'operations',
-    requiredTier: 'admin'
+    isAdmin: true
   }
 ];
