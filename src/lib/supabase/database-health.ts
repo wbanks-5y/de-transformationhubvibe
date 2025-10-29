@@ -110,21 +110,28 @@ export const checkDatabaseHealth = async (
         const errorDetails = `${assignError.code || 'NO_CODE'}: ${assignError.message || 'NO_MESSAGE'}`;
         status.secureAssignFunctionError = errorDetails;
         
-        const isMissingFunction = 
-          assignError.code === 'PGRST116' ||
-          assignError.code === 'PGRST202' ||
-          assignError.code === '42883' ||
-          (assignError as any).status === 404 ||
-          assignError.message?.toLowerCase().includes('does not exist') ||
-          assignError.message?.toLowerCase().includes('not found') ||
-          assignError.details?.toLowerCase().includes('does not exist');
-        
-        if (isMissingFunction) {
-          status.errors.push('secure_assign_admin_role function does not exist');
-          status.secureAssignFunctionExists = false;
-        } else {
-          // Function exists but returned an authorization/business logic error (expected)
+        // P0001 is a business logic error (user not found), which means the function EXISTS
+        if (assignError.code === 'P0001') {
           status.secureAssignFunctionExists = true;
+        } else {
+          const msg = (assignError.message || '').toLowerCase();
+          const details = (assignError.details || '').toLowerCase();
+          
+          const isMissingFunction = 
+            assignError.code === 'PGRST116' ||
+            assignError.code === 'PGRST202' ||
+            assignError.code === '42883' ||
+            (assignError as any).status === 404 ||
+            ((msg.includes('function') || details.includes('function')) &&
+             (msg.includes('does not exist') || msg.includes('not found') || details.includes('does not exist')));
+          
+          if (isMissingFunction) {
+            status.errors.push('secure_assign_admin_role function does not exist');
+            status.secureAssignFunctionExists = false;
+          } else {
+            // Function exists but returned an authorization/business logic error (expected)
+            status.secureAssignFunctionExists = true;
+          }
         }
       } else {
         // No error means function exists and worked (shouldn't happen with bogus email, but ok)
