@@ -288,8 +288,8 @@ export class ProactiveIntelligenceEngine {
       const concerns: string[] = [];
 
       if (bottlenecks) {
-        const highImpactBottlenecks = bottlenecks.filter(b => b.impact_level === 'high');
-        const lowWaitTimes = bottlenecks.filter(b => b.wait_time_hours < 8);
+        const highImpactBottlenecks = bottlenecks.filter((b: any) => b.impact_level === 'high');
+        const lowWaitTimes = bottlenecks.filter((b: any) => b.wait_time_hours < 8);
 
         if (lowWaitTimes.length > bottlenecks.length / 2) {
           highlights.push('Process efficiency improved with reduced wait times across multiple steps');
@@ -452,7 +452,7 @@ export class ProactiveIntelligenceEngine {
       const atRisk: string[] = [];
 
       if (objectives) {
-        objectives.forEach(obj => {
+        objectives.forEach((obj: any) => {
           const name = obj.strategic_objectives?.display_name;
           if (name) {
             if (obj.rag_status === 'green' || obj.health_score > 80) {
