@@ -1,6 +1,6 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 export interface CreateAnalystInsightCategoryData {
@@ -14,14 +14,10 @@ export interface CreateAnalystInsightCategoryData {
 
 export const useCreateAnalystInsightCategory = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
 
   return useMutation({
     mutationFn: async (data: CreateAnalystInsightCategoryData) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { data: result, error } = await organizationClient
+      const { data: result, error } = await supabase
         .from('analyst_insight_categories')
         .insert([data])
         .select()
@@ -42,14 +38,10 @@ export const useCreateAnalystInsightCategory = () => {
 
 export const useUpdateAnalystInsightCategory = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<CreateAnalystInsightCategoryData> }) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { data: result, error } = await organizationClient
+      const { data: result, error } = await supabase
         .from('analyst_insight_categories')
         .update(data)
         .eq('id', id)
@@ -71,14 +63,10 @@ export const useUpdateAnalystInsightCategory = () => {
 
 export const useDeleteAnalystInsightCategory = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
 
   return useMutation({
     mutationFn: async (id: string) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('analyst_insight_categories')
         .update({ is_active: false })
         .eq('id', id);

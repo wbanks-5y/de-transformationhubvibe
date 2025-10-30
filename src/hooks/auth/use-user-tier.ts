@@ -1,19 +1,18 @@
 
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { useOrganization } from "@/context/OrganizationContext";
 import type { UserTier } from "@/types/tiers";
 
 export const useUserTier = () => {
   const { user } = useAuth();
-  const { organizationClient } = useOrganization();
 
   return useQuery({
     queryKey: ['user-tier', user?.id],
     queryFn: async (): Promise<UserTier | null> => {
-      if (!user?.id || !organizationClient) return null;
+      if (!user?.id) return null;
 
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('profiles')
         .select('tier')
         .eq('id', user.id)
@@ -26,7 +25,7 @@ export const useUserTier = () => {
 
       return data?.tier as UserTier || 'essential';
     },
-    enabled: !!user?.id && !!organizationClient,
+    enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     retry: 1
   });

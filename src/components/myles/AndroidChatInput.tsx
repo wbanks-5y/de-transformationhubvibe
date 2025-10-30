@@ -12,7 +12,7 @@ const AndroidChatInput: React.FC<AndroidChatInputProps> = ({ onSendMessage, isLo
   const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  console.log('AndroidChatInput render:', { messageLength: message.length, isLoading, isFocused });
+  console.log('🤖 AndroidChatInput render:', { messageLength: message.length, isLoading, isFocused });
 
   // Auto-resize textarea
   useEffect(() => {
@@ -27,7 +27,7 @@ const AndroidChatInput: React.FC<AndroidChatInputProps> = ({ onSendMessage, isLo
     e.preventDefault();
     if (!message.trim() || isLoading) return;
     
-    console.log('Submitting message:', message.slice(0, 50) + '...');
+    console.log('🤖 Submitting message:', message.slice(0, 50) + '...');
     onSendMessage(message);
     setMessage("");
     
@@ -45,12 +45,12 @@ const AndroidChatInput: React.FC<AndroidChatInputProps> = ({ onSendMessage, isLo
   };
 
   const handleFocus = () => {
-    console.log('Input focused');
+    console.log('🤖 Input focused');
     setIsFocused(true);
   };
 
   const handleBlur = () => {
-    console.log('Input blurred');
+    console.log('🤖 Input blurred');
     setIsFocused(false);
   };
 

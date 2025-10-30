@@ -1,6 +1,6 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface MetricBaseUpdate {
@@ -33,19 +33,15 @@ interface MetricUpdateData {
 
 export const useMetricDirectUpdate = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async ({ metricId, baseUpdate, configUpdate, dataPoints }: MetricUpdateData) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
       console.log('useMetricDirectUpdate: Starting update for metric:', metricId);
       console.log('useMetricDirectUpdate: Data points to process:', dataPoints.length);
 
       // Step 1: Update metric_base
       console.log('useMetricDirectUpdate: Updating metric_base...');
-      const { error: baseError } = await organizationClient
+      const { error: baseError } = await supabase
         .from('metric_base')
         .update(baseUpdate)
         .eq('id', metricId);
@@ -58,7 +54,7 @@ export const useMetricDirectUpdate = () => {
 
       // Step 2: Update metric_time_based config
       console.log('useMetricDirectUpdate: Updating metric_time_based config...');
-      const { error: configError } = await organizationClient
+      const { error: configError } = await supabase
         .from('metric_time_based')
         .update(configUpdate)
         .eq('base_metric_id', metricId);
@@ -71,7 +67,7 @@ export const useMetricDirectUpdate = () => {
 
       // Step 3: Get the time_metric_id
       console.log('useMetricDirectUpdate: Fetching time_metric_id...');
-      const { data: timeBasedConfig, error: fetchError } = await organizationClient
+      const { data: timeBasedConfig, error: fetchError } = await supabase
         .from('metric_time_based')
         .select('id')
         .eq('base_metric_id', metricId)
@@ -104,7 +100,7 @@ export const useMetricDirectUpdate = () => {
       console.log('useMetricDirectUpdate: Calling replace_time_based_metric_data function with data:', dataPointsForFunction);
 
       // Call the database function
-      const { data: functionResult, error: functionError } = await organizationClient.rpc(
+      const { data: functionResult, error: functionError } = await supabase.rpc(
         'replace_time_based_metric_data',
         {
           p_time_metric_id: timeMetricId,

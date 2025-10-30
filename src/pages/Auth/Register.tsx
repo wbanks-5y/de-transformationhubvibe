@@ -20,8 +20,8 @@ export default function Register() {
         full_name: data.fullName || ''
       });
       
-      // Navigate to root page after successful registration
-      navigate('/', { state: { message: 'Please check your email to verify your account.' } });
+      // Navigate to login page after successful registration
+      navigate('/login', { state: { message: 'Please check your email to verify your account.' } });
     } catch (error: any) {
       // Error handling is done in the SecureAuthForm component
       throw error;
@@ -68,7 +68,7 @@ export default function Register() {
           <Separator className="my-4" />
           <p className="text-center text-sm text-muted-foreground mt-2">
             Already have an account?{" "}
-            <Link to="/" className="text-primary hover:underline">
+            <Link to="/login" className="text-primary hover:underline">
               Sign in
             </Link>
           </p>

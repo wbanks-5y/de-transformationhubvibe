@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Plus, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -23,7 +23,6 @@ interface BottleneckFormData {
 }
 
 const ProcessBottlenecksAdmin: React.FC<ProcessBottlenecksAdminProps> = ({ selectedProcessId }) => {
-  const { organizationClient } = useOrganization();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBottleneck, setSelectedBottleneck] = useState<any>(null);
@@ -37,9 +36,9 @@ const ProcessBottlenecksAdmin: React.FC<ProcessBottlenecksAdminProps> = ({ selec
   const { data: bottlenecks = [], refetch, isLoading } = useQuery({
     queryKey: ['process-bottlenecks', selectedProcessId],
     queryFn: async () => {
-      if (!selectedProcessId || !organizationClient) return [];
+      if (!selectedProcessId) return [];
       
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('process_bottlenecks')
         .select('*')
         .eq('process_id', selectedProcessId)
@@ -48,7 +47,7 @@ const ProcessBottlenecksAdmin: React.FC<ProcessBottlenecksAdminProps> = ({ selec
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedProcessId && !!organizationClient,
+    enabled: !!selectedProcessId,
   });
 
   const resetForm = () => {
@@ -61,13 +60,13 @@ const ProcessBottlenecksAdmin: React.FC<ProcessBottlenecksAdminProps> = ({ selec
   };
 
   const handleCreate = async () => {
-    if (!selectedProcessId || !organizationClient) {
+    if (!selectedProcessId) {
       toast.error("Please select a process first");
       return;
     }
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_bottlenecks')
         .insert([{
           ...formData,
@@ -98,10 +97,10 @@ const ProcessBottlenecksAdmin: React.FC<ProcessBottlenecksAdminProps> = ({ selec
   };
 
   const handleUpdate = async () => {
-    if (!selectedBottleneck || !organizationClient) return;
+    if (!selectedBottleneck) return;
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_bottlenecks')
         .update(formData)
         .eq('id', selectedBottleneck.id);
@@ -120,10 +119,10 @@ const ProcessBottlenecksAdmin: React.FC<ProcessBottlenecksAdminProps> = ({ selec
   };
 
   const handleDelete = async (bottleneck: any) => {
-    if (!confirm(`Are you sure you want to delete "${bottleneck.step_name}"?`) || !organizationClient) return;
+    if (!confirm(`Are you sure you want to delete "${bottleneck.step_name}"?`)) return;
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_bottlenecks')
         .delete()
         .eq('id', bottleneck.id);
@@ -139,10 +138,8 @@ const ProcessBottlenecksAdmin: React.FC<ProcessBottlenecksAdminProps> = ({ selec
   };
 
   const toggleActive = async (bottleneck: any) => {
-    if (!organizationClient) return;
-
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_bottlenecks')
         .update({ is_active: !bottleneck.is_active })
         .eq('id', bottleneck.id);

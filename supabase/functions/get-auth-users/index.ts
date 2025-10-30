@@ -88,12 +88,11 @@ const handler = async (req: Request): Promise<Response> => {
         );
       } catch (listError) {
         console.error('Error in listUsers:', listError);
-        const errorDetails = listError instanceof Error ? listError.message : 'Unknown error';
         return new Response(
           JSON.stringify({ 
             success: false,
             error: 'Error fetching auth users',
-            details: errorDetails
+            details: listError.message
           }),
           { 
             status: 500, 

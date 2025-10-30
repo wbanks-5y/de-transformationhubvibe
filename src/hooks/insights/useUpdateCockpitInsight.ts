@@ -1,20 +1,16 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 import { CockpitInsight } from '@/types/cockpit';
 import { toast } from 'sonner';
 
 export const useUpdateCockpitInsight = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<CockpitInsight> }) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
       console.log('Updating insight:', id, updates);
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('cockpit_insights')
         .update(updates)
         .eq('id', id)

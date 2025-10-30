@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Edit, Trash2, Eye, EyeOff, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -22,7 +22,6 @@ interface DurationFormData {
 }
 
 const ProcessStepDurationsAdmin: React.FC<ProcessStepDurationsAdminProps> = ({ selectedProcessId }) => {
-  const { organizationClient } = useOrganization();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState<any>(null);
   const [formData, setFormData] = useState<DurationFormData>({
@@ -36,9 +35,9 @@ const ProcessStepDurationsAdmin: React.FC<ProcessStepDurationsAdminProps> = ({ s
   const { data: processSteps = [] } = useQuery({
     queryKey: ['process-steps-for-durations', selectedProcessId],
     queryFn: async () => {
-      if (!selectedProcessId || !organizationClient) return [];
+      if (!selectedProcessId) return [];
       
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('process_steps')
         .select('*')
         .eq('process_id', selectedProcessId)
@@ -48,15 +47,15 @@ const ProcessStepDurationsAdmin: React.FC<ProcessStepDurationsAdminProps> = ({ s
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedProcessId && !!organizationClient,
+    enabled: !!selectedProcessId,
   });
 
   const { data: durations = [], refetch, isLoading } = useQuery({
     queryKey: ['process-step-durations', selectedProcessId],
     queryFn: async () => {
-      if (!selectedProcessId || !organizationClient) return [];
+      if (!selectedProcessId) return [];
       
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('process_step_durations')
         .select('*')
         .eq('process_id', selectedProcessId)
@@ -65,12 +64,12 @@ const ProcessStepDurationsAdmin: React.FC<ProcessStepDurationsAdminProps> = ({ s
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedProcessId && !!organizationClient,
+    enabled: !!selectedProcessId,
   });
 
   // Auto-populate durations based on process steps
   const autoPopulateDurations = async () => {
-    if (!selectedProcessId || !processSteps.length || isAutoPopulating || !organizationClient) {
+    if (!selectedProcessId || !processSteps.length || isAutoPopulating) {
       if (!processSteps.length) {
         toast.error("No process steps found to populate durations");
       }
@@ -100,7 +99,7 @@ const ProcessStepDurationsAdmin: React.FC<ProcessStepDurationsAdminProps> = ({ s
         is_active: true
       }));
 
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_step_durations')
         .insert(newDurations);
 
@@ -147,10 +146,10 @@ const ProcessStepDurationsAdmin: React.FC<ProcessStepDurationsAdminProps> = ({ s
   };
 
   const handleUpdate = async () => {
-    if (!selectedDuration || !organizationClient) return;
+    if (!selectedDuration) return;
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_step_durations')
         .update(formData)
         .eq('id', selectedDuration.id);
@@ -169,10 +168,10 @@ const ProcessStepDurationsAdmin: React.FC<ProcessStepDurationsAdminProps> = ({ s
   };
 
   const handleDelete = async (duration: any) => {
-    if (!confirm(`Are you sure you want to delete "${duration.step_name}"?`) || !organizationClient) return;
+    if (!confirm(`Are you sure you want to delete "${duration.step_name}"?`)) return;
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_step_durations')
         .delete()
         .eq('id', duration.id);
@@ -188,10 +187,8 @@ const ProcessStepDurationsAdmin: React.FC<ProcessStepDurationsAdminProps> = ({ s
   };
 
   const toggleActive = async (duration: any) => {
-    if (!organizationClient) return;
-
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_step_durations')
         .update({ is_active: !duration.is_active })
         .eq('id', duration.id);

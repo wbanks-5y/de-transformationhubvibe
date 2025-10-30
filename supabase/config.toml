@@ -1,4 +1,4 @@
-project_id = "gvrxydwedhppmvppqwwm"
+project_id = "jyuxaifsevdwbjwldgbw"
 
 [api]
 enabled = true
@@ -59,12 +59,3 @@ verify_jwt = true
 
 [functions.myles-chat]
 verify_jwt = true
-
-[functions.invite-user]
-verify_jwt = false
-
-[functions.complete-invitation]
-verify_jwt = false
-
-[functions.resend-email-status]
-verify_jwt = false

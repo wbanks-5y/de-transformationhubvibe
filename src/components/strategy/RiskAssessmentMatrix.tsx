@@ -6,16 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { useStrategicRisksOpportunities } from "@/hooks/use-strategic-objectives";
 import { AlertTriangle, Shield, TrendingUp, Filter, Download, Plus, Edit, Trash2 } from "lucide-react";
 import AddRiskOpportunityDialog from './AddRiskOpportunityDialog';
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const RiskAssessmentMatrix: React.FC = () => {
-  const { organizationClient } = useOrganization();
   const { data: risks = [], refetch } = useStrategicRisksOpportunities();
-  
-  if (!organizationClient) {
-    return <div>Loading organization context...</div>;
-  }
   const [selectedView, setSelectedView] = useState('matrix');
   const [filterType, setFilterType] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -66,7 +61,7 @@ const RiskAssessmentMatrix: React.FC = () => {
     if (!confirm(`Are you sure you want to delete this ${item.type}?`)) return;
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('strategic_risks_opportunities')
         .delete()
         .eq('id', item.id);

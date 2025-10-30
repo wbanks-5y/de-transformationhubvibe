@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -21,7 +21,6 @@ const MilestoneActions: React.FC<MilestoneActionsProps> = ({ milestone }) => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
 
   const [editData, setEditData] = useState({
     milestone_name: milestone.milestone_name || '',
@@ -36,9 +35,7 @@ const MilestoneActions: React.FC<MilestoneActionsProps> = ({ milestone }) => {
     setIsSubmitting(true);
     
     try {
-      if (!organizationClient) throw new Error('Organization client not available');
-      
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('strategic_initiative_milestones')
         .update({
           milestone_name: editData.milestone_name,
@@ -67,9 +64,7 @@ const MilestoneActions: React.FC<MilestoneActionsProps> = ({ milestone }) => {
     setIsSubmitting(true);
     
     try {
-      if (!organizationClient) throw new Error('Organization client not available');
-      
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('strategic_initiative_milestones')
         .delete()
         .eq('id', milestone.id);

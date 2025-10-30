@@ -21,7 +21,7 @@ const ProtectedRoute = ({ children, requireApproval = true }: ProtectedRouteProp
   }
 
   if (!user) {
-    return <Navigate to="/" state={{ from: location.pathname }} replace />;
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
   // If approval is required, check approval status

@@ -1,5 +1,6 @@
+
 import { useQuery } from "@tanstack/react-query";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface BusinessProcess {
   id: string;
@@ -45,16 +46,10 @@ export interface ProcessStatistics {
 }
 
 export const useBusinessProcesses = () => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['business-processes'],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('business_processes')
         .select('*')
         .eq('is_active', true)
@@ -66,21 +61,14 @@ export const useBusinessProcesses = () => {
 
       return data as BusinessProcess[];
     },
-    enabled: !!organizationClient,
   });
 };
 
 export const useProcessSteps = (processId: string) => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['process-steps', processId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('process_steps')
         .select('*')
         .eq('process_id', processId)
@@ -93,21 +81,15 @@ export const useProcessSteps = (processId: string) => {
 
       return data as ProcessStep[];
     },
-    enabled: !!organizationClient && !!processId,
+    enabled: !!processId,
   });
 };
 
 export const useProcessVariants = (processId: string) => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['process-variants', processId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('process_variants')
         .select('*')
         .eq('process_id', processId)
@@ -120,21 +102,15 @@ export const useProcessVariants = (processId: string) => {
 
       return data as ProcessVariant[];
     },
-    enabled: !!organizationClient && !!processId,
+    enabled: !!processId,
   });
 };
 
 export const useProcessStatistics = (processId: string) => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['process-statistics', processId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('process_statistics')
         .select('*')
         .eq('process_id', processId)
@@ -146,6 +122,6 @@ export const useProcessStatistics = (processId: string) => {
 
       return data as ProcessStatistics;
     },
-    enabled: !!organizationClient && !!processId,
+    enabled: !!processId,
   });
 };

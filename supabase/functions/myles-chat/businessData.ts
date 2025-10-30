@@ -199,7 +199,7 @@ Description: ${cockpitTypeData.description}
 KEY PERFORMANCE INDICATORS:`;
     
     if (kpis && kpis.length > 0) {
-      kpis.forEach((kpi: any) => {
+      kpis.forEach(kpi => {
         cockpitData += `
 - ${kpi.display_name}: ${kpi.manual_value || 'No current value'} ${kpi.target_value ? `(Target: ${kpi.target_value})` : ''}`;
       });
@@ -209,7 +209,7 @@ KEY PERFORMANCE INDICATORS:`;
     
     cockpitData += '\n\nSECTIONS & METRICS:';
     if (sections && sections.length > 0) {
-      sections.forEach((section: any) => {
+      sections.forEach(section => {
         cockpitData += `\n- ${section.display_name}: ${section.description || 'No description'}`;
         if (section.metric_base && section.metric_base.length > 0) {
           section.metric_base.forEach((metric: any) => {
@@ -333,7 +333,7 @@ KEY PERFORMANCE INDICATORS:`;
     
     if (insights && insights.length > 0) {
       cockpitData += '\n\nRECENT INSIGHTS:';
-      insights.forEach((insight: any) => {
+      insights.forEach(insight => {
         cockpitData += `\n- [${insight.priority.toUpperCase()}] ${insight.title}: ${insight.description}`;
       });
     }
@@ -369,7 +369,7 @@ function formatMetricValue(value: number, type: string): string {
       } else if (value >= 1000) {
         return `${Math.round(value / 1000 * 10) / 10}K`;
       }
-      return String(Math.round(value * 100) / 100);
+      return Math.round(value * 100) / 100;
   }
 }
 
@@ -419,7 +419,7 @@ async function fetchProcessIntelligenceData(supabase: any) {
       
       if (bottlenecks && bottlenecks.length > 0) {
         processData += '\n- Key Bottlenecks:';
-        bottlenecks.forEach((bottleneck: any) => {
+        bottlenecks.forEach(bottleneck => {
           processData += `\n  • ${bottleneck.step_name} (${bottleneck.wait_time_hours}h wait, ${bottleneck.impact_level} impact)`;
         });
       }
@@ -435,7 +435,7 @@ async function fetchProcessIntelligenceData(supabase: any) {
       
       if (recommendations && recommendations.length > 0) {
         processData += '\n- Top Recommendations:';
-        recommendations.forEach((rec: any) => {
+        recommendations.forEach(rec => {
           processData += `\n  • ${rec.title} (${rec.impact_level} impact)`;
         });
       }
@@ -496,7 +496,7 @@ async function fetchBusinessHealthData(supabase: any) {
       
       if (initiatives && initiatives.length > 0) {
         healthData += '\n- Key Initiatives:';
-        initiatives.forEach((initiative: any) => {
+        initiatives.forEach(initiative => {
           healthData += `\n  • ${initiative.name} (${initiative.status}, ${initiative.progress_percentage}% complete)`;
         });
       }
@@ -512,7 +512,7 @@ async function fetchBusinessHealthData(supabase: any) {
       
       if (risks && risks.length > 0) {
         healthData += '\n- Key Risks:';
-        risks.forEach((risk: any) => {
+        risks.forEach(risk => {
           healthData += `\n  • ${risk.title} (${risk.impact_level} impact, ${risk.probability} probability)`;
         });
       }
@@ -542,7 +542,7 @@ async function fetchAnalystInsights(supabase: any) {
     
     let insightsData = 'ANALYST INSIGHTS:\n';
     
-    insights.forEach((insight: any) => {
+    insights.forEach(insight => {
       insightsData += `\n- [${insight.impact.toUpperCase()}] ${insight.title}`;
       insightsData += `\n  Category: ${insight.category}`;
       insightsData += `\n  Description: ${insight.description}`;
@@ -573,7 +573,7 @@ async function fetchOverviewData(supabase: any) {
     
     if (cockpitTypes && cockpitTypes.length > 0) {
       overviewData += '\nAVAILABLE COCKPITS:';
-      cockpitTypes.forEach((cockpit: any) => {
+      cockpitTypes.forEach(cockpit => {
         overviewData += `\n- ${cockpit.display_name}: ${cockpit.description}`;
       });
     }

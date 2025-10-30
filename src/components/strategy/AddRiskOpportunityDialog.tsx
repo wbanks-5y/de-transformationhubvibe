@@ -6,25 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { normalizeStatus, normalizeImpactLevel, normalizeProbability } from "@/lib/normalizers/risks";
-import { z } from "zod";
-
-const riskOpportunitySchema = z.object({
-  type: z.enum(['risk', 'opportunity']),
-  title: z.string().trim().min(1, "Title is required").max(200, "Title too long"),
-  description: z.string().trim().min(1, "Description is required"),
-  impact_level: z.enum(['low', 'medium', 'high', 'critical'], {
-    required_error: "Impact level is required"
-  }),
-  probability: z.enum(['low', 'medium', 'high'], {
-    required_error: "Probability is required"
-  }),
-  status: z.enum(['identified', 'assessing', 'mitigating', 'monitoring', 'closed']),
-  owner: z.string().trim().max(100, "Owner name too long"),
-  mitigation_actions: z.string().trim()
-});
 
 interface AddRiskOpportunityDialogProps {
   isOpen: boolean;
@@ -41,7 +24,6 @@ const AddRiskOpportunityDialog: React.FC<AddRiskOpportunityDialogProps> = ({
   item,
   defaultType = 'risk'
 }) => {
-  const { organizationClient } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     type: defaultType,
@@ -54,23 +36,6 @@ const AddRiskOpportunityDialog: React.FC<AddRiskOpportunityDialogProps> = ({
     mitigation_actions: ''
   });
 
-  // Normalize legacy status values to current valid enum values
-  const normalizeStatusValue = (status: string | undefined): string => {
-    if (!status) return 'identified';
-    
-    const statusMap: Record<string, string> = {
-      'identified': 'identified',
-      'assessing': 'assessing',
-      'assessed': 'assessing',  // Legacy value
-      'mitigating': 'mitigating',
-      'mitigated': 'mitigating',  // Legacy value
-      'monitoring': 'monitoring',
-      'closed': 'closed'
-    };
-    
-    return statusMap[status.toLowerCase()] || 'identified';
-  };
-
   useEffect(() => {
     if (item) {
       setFormData({
@@ -79,7 +44,7 @@ const AddRiskOpportunityDialog: React.FC<AddRiskOpportunityDialogProps> = ({
         description: item.description || '',
         impact_level: item.impact_level || '',
         probability: item.probability || '',
-        status: normalizeStatusValue(item.status),
+        status: item.status || 'identified',
         owner: item.owner || '',
         mitigation_actions: item.mitigation_actions || ''
       });
@@ -102,49 +67,20 @@ const AddRiskOpportunityDialog: React.FC<AddRiskOpportunityDialogProps> = ({
     setLoading(true);
 
     try {
-      if (!organizationClient) throw new Error('Organization client not available');
-      
-      // Validate form data
-      const validatedData = riskOpportunitySchema.parse(formData);
-      
-      // Normalize values for database
-      const submitData: any = {
-        type: validatedData.type,
-        title: validatedData.title,
-        description: validatedData.description,
-        status: normalizeStatus(validatedData.status),
-        impact_level: normalizeImpactLevel(validatedData.impact_level),
-        probability: normalizeProbability(validatedData.probability),
-        owner: validatedData.owner || null,
-        mitigation_actions: validatedData.mitigation_actions || null
-      };
-      
-      // Force lowercase at the final step to avoid any case mismatch
-      submitData.status = String(submitData.status).trim().toLowerCase();
-      submitData.impact_level = String(submitData.impact_level).trim().toLowerCase();
-      submitData.probability = String(submitData.probability).trim().toLowerCase();
-
-      console.log('📤 Final submit (forced lower):', {
-        status: `[${submitData.status}]`, statusLen: submitData.status.length,
-        impact_level: `[${submitData.impact_level}]`, impactLen: submitData.impact_level.length,
-        probability: `[${submitData.probability}]`, probLen: submitData.probability.length,
-        raw: submitData
-      });
-      
       if (item) {
         // Update existing item
-        const { error } = await organizationClient
+        const { error } = await supabase
           .from('strategic_risks_opportunities')
-          .update(submitData)
+          .update(formData)
           .eq('id', item.id);
 
         if (error) throw error;
         toast.success(`${formData.type} updated successfully`);
       } else {
         // Create new item
-        const { error } = await organizationClient
+        const { error } = await supabase
           .from('strategic_risks_opportunities')
-          .insert([submitData]);
+          .insert([formData]);
 
         if (error) throw error;
         toast.success(`${formData.type} created successfully`);
@@ -152,13 +88,9 @@ const AddRiskOpportunityDialog: React.FC<AddRiskOpportunityDialogProps> = ({
 
       onSave();
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving item:', error);
-      if (error.name === 'ZodError') {
-        toast.error('Please check all required fields');
-      } else {
-        toast.error(`Failed to save ${formData.type}: ${error.message || 'Unknown error'}`);
-      }
+      toast.error(`Failed to save ${formData.type}`);
     } finally {
       setLoading(false);
     }
@@ -244,32 +176,14 @@ const AddRiskOpportunityDialog: React.FC<AddRiskOpportunityDialogProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value) => updateField('status', value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="identified">Identified</SelectItem>
-                  <SelectItem value="assessing">Assessing</SelectItem>
-                  <SelectItem value="mitigating">Mitigating</SelectItem>
-                  <SelectItem value="monitoring">Monitoring</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="owner">Owner</Label>
-              <Input
-                id="owner"
-                value={formData.owner}
-                onChange={(e) => updateField('owner', e.target.value)}
-                placeholder="Enter owner"
-              />
-            </div>
+          <div>
+            <Label htmlFor="owner">Owner</Label>
+            <Input
+              id="owner"
+              value={formData.owner}
+              onChange={(e) => updateField('owner', e.target.value)}
+              placeholder="Enter owner"
+            />
           </div>
 
           {formData.type === 'risk' && (

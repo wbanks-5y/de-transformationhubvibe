@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface InitiativeHealth {
   id: string;
@@ -13,15 +13,10 @@ export interface InitiativeHealth {
 }
 
 export const useInitiativeHealthScores = () => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['initiative-health-scores'],
     queryFn: async (): Promise<InitiativeHealth[]> => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { data, error } = await organizationClient.rpc('get_initiative_health_scores');
+      const { data, error } = await supabase.rpc('get_initiative_health_scores');
 
       if (error) {
         console.error('Error fetching initiative health scores:', error);
@@ -42,20 +37,14 @@ export const useInitiativeHealthScores = () => {
         }))
         .sort((a, b) => b.health_score - a.health_score);
     },
-    enabled: !!organizationClient,
   });
 };
 
 export const useInitiativeKpiLinks = (initiativeId?: string) => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['initiative-kpi-links', initiativeId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      let query = organizationClient
+      let query = supabase
         .from('initiative_kpi_links')
         .select(`
           *,
@@ -76,20 +65,15 @@ export const useInitiativeKpiLinks = (initiativeId?: string) => {
 
       return data || [];
     },
-    enabled: (!!initiativeId || initiativeId === undefined) && !!organizationClient,
+    enabled: !!initiativeId || initiativeId === undefined,
   });
 };
 
 export const useMilestoneTemplates = () => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['milestone-templates'],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('milestone_templates')
         .select('*')
         .eq('is_active', true)
@@ -102,6 +86,5 @@ export const useMilestoneTemplates = () => {
 
       return data || [];
     },
-    enabled: !!organizationClient,
   });
 };

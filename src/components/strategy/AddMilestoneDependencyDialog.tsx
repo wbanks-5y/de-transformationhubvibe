@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { useStrategicInitiativeMilestones } from "@/hooks/use-strategic-scenarios";
 
 interface AddMilestoneDependencyDialogProps {
@@ -21,7 +21,6 @@ const AddMilestoneDependencyDialog: React.FC<AddMilestoneDependencyDialogProps> 
   const [dependencyType, setDependencyType] = useState<string>('finish_to_start');
   const [lagDays, setLagDays] = useState<number>(0);
   
-  const { organizationClient } = useOrganization();
   const queryClient = useQueryClient();
   const { data: milestones = [] } = useStrategicInitiativeMilestones();
 
@@ -32,9 +31,7 @@ const AddMilestoneDependencyDialog: React.FC<AddMilestoneDependencyDialogProps> 
       dependency_type: string;
       lag_days: number;
     }) => {
-      if (!organizationClient) throw new Error('Organization client not available');
-      
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('strategic_milestone_dependencies')
         .insert([data]);
 

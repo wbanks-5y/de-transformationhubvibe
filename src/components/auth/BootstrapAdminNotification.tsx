@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useOrganization } from '@/context/OrganizationContext';
 import { useBootstrapAdmin } from '@/hooks/auth';
 import { toast } from 'sonner';
 import { Shield, AlertTriangle } from 'lucide-react';
@@ -10,13 +9,6 @@ import { Shield, AlertTriangle } from 'lucide-react';
  */
 const BootstrapAdminNotification = () => {
   const { user } = useAuth();
-  const { organizationClient } = useOrganization();
-  
-  // Don't run bootstrap checks without organization context
-  if (!organizationClient) {
-    return null;
-  }
-  
   const { needsBootstrap, isFirstAdmin, isChecking } = useBootstrapAdmin();
 
   useEffect(() => {

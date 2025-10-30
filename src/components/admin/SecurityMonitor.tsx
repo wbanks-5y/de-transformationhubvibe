@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 const SecurityMonitor: React.FC = () => {
-  const { data: auditLogs, isLoading, error } = useQuery({
+  const { data: auditLogs, isLoading } = useQuery({
     queryKey: ['security-audit-logs'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -16,14 +16,10 @@ const SecurityMonitor: React.FC = () => {
         .order('created_at', { ascending: false })
         .limit(20);
       
-      if (error) {
-        console.error('Error fetching audit logs:', error);
-        throw error;
-      }
-      return data || [];
+      if (error) throw error;
+      return data;
     },
     refetchInterval: 30000, // Refresh every 30 seconds
-    retry: 1,
   });
 
   const getActionIcon = (action: string) => {
@@ -66,13 +62,6 @@ const SecurityMonitor: React.FC = () => {
       <CardContent>
         {isLoading ? (
           <div className="text-center py-4">Loading security logs...</div>
-        ) : error ? (
-          <div className="text-center py-8">
-            <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              Unable to load security logs. The audit system may not be set up yet.
-            </p>
-          </div>
         ) : (
           <div className="space-y-3">
             {auditLogs?.map((log) => (

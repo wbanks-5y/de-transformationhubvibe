@@ -19,14 +19,10 @@ export const SecurityThreatMonitor: React.FC = () => {
     queryKey: ['security-threats'],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('detect_security_threats');
-      if (error) {
-        console.error('Error detecting threats:', error);
-        throw error;
-      }
-      return (data as SecurityThreat[]) || [];
+      if (error) throw error;
+      return data as SecurityThreat[];
     },
-    refetchInterval: 30000,
-    retry: 1,
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   const getThreatColor = (score: number) => {
@@ -77,22 +73,13 @@ export const SecurityThreatMonitor: React.FC = () => {
 
   if (error) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Security Threat Monitor
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-sm text-muted-foreground">
-              Unable to load threat detection. The security monitoring system may not be set up yet.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>
+          Failed to load security threat data. Please try again.
+        </AlertDescription>
+      </Alert>
     );
   }
 

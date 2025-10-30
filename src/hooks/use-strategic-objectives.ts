@@ -1,18 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useStrategicObjectives = () => {
-  const { organizationClient, currentOrganization } = useOrganization();
-  
   return useQuery({
-    queryKey: ['strategic-objectives', currentOrganization?.slug],
+    queryKey: ['strategic-objectives'],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('Organization client not available');
-      }
-      
       console.log('Fetching strategic objectives...');
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('strategic_objectives')
         .select(`
           *,
@@ -46,22 +40,15 @@ export const useStrategicObjectives = () => {
       console.log('Strategic objectives fetched:', data);
       return data || [];
     },
-    enabled: !!organizationClient,
   });
 };
 
 export const useStrategicObjectiveById = (id: string) => {
-  const { organizationClient } = useOrganization();
-  
   return useQuery({
     queryKey: ['strategic-objective', id],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('Organization client not available');
-      }
-      
       console.log('Fetching strategic objective by id:', id);
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('strategic_objectives')
         .select(`
           *,
@@ -96,22 +83,16 @@ export const useStrategicObjectiveById = (id: string) => {
       console.log('Strategic objective fetched:', data);
       return data;
     },
-    enabled: !!id && !!organizationClient,
+    enabled: !!id,
   });
 };
 
 export const useStrategicObjectiveDetails = (objectiveId: string) => {
-  const { organizationClient } = useOrganization();
-  
   return useQuery({
     queryKey: ['strategic-objective-details', objectiveId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('Organization client not available');
-      }
-      
       console.log('Fetching strategic objective details for:', objectiveId);
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('strategic_objectives')
         .select(`
           *,
@@ -174,22 +155,16 @@ export const useStrategicObjectiveDetails = (objectiveId: string) => {
       console.log('Strategic objective details fetched:', data);
       return data;
     },
-    enabled: !!objectiveId && !!organizationClient,
+    enabled: !!objectiveId,
   });
 };
 
 export const useStrategicObjectiveKPIs = (objectiveId: string) => {
-  const { organizationClient } = useOrganization();
-  
   return useQuery({
     queryKey: ['strategic-objective-kpis', objectiveId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('Organization client not available');
-      }
-      
       console.log('Fetching strategic objective KPIs for:', objectiveId);
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('strategic_objective_kpis')
         .select(`
           *,
@@ -215,23 +190,17 @@ export const useStrategicObjectiveKPIs = (objectiveId: string) => {
       console.log('Strategic objective KPIs fetched:', data);
       return data || [];
     },
-    enabled: !!objectiveId && !!organizationClient,
+    enabled: !!objectiveId,
   });
 };
 
 export const useStrategicRisksOpportunities = (objectiveId?: string) => {
-  const { organizationClient } = useOrganization();
-  
   return useQuery({
     queryKey: ['strategic-risks-opportunities', objectiveId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('Organization client not available');
-      }
-      
       console.log('Fetching strategic risks and opportunities for:', objectiveId);
       
-      let query = organizationClient
+      let query = supabase
         .from('strategic_risks_opportunities')
         .select('*')
         .eq('is_active', true)
@@ -251,6 +220,5 @@ export const useStrategicRisksOpportunities = (objectiveId?: string) => {
       console.log('Strategic risks and opportunities fetched:', data);
       return data || [];
     },
-    enabled: !!organizationClient,
   });
 };

@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Plus, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -32,7 +32,6 @@ interface StepFormData {
 }
 
 const ProcessStepsAdmin: React.FC<ProcessStepsAdminProps> = ({ selectedProcessId }) => {
-  const { organizationClient } = useOrganization();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedStep, setSelectedStep] = useState<any>(null);
@@ -51,11 +50,7 @@ const ProcessStepsAdmin: React.FC<ProcessStepsAdminProps> = ({ selectedProcessId
   const { data: steps = [], refetch, isLoading } = useQuery({
     queryKey: ['process-steps', selectedProcessId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-
-      let query = organizationClient
+      let query = supabase
         .from('process_steps')
         .select(`
           *,
@@ -73,7 +68,6 @@ const ProcessStepsAdmin: React.FC<ProcessStepsAdminProps> = ({ selectedProcessId
       if (error) throw error;
       return data;
     },
-    enabled: !!organizationClient,
   });
 
   // Update formData when selectedProcessId changes
@@ -104,13 +98,8 @@ const ProcessStepsAdmin: React.FC<ProcessStepsAdminProps> = ({ selectedProcessId
   };
 
   const handleCreate = async () => {
-    if (!organizationClient) {
-      toast.error("No organization client available");
-      return;
-    }
-
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_steps')
         .insert([formData]);
 
@@ -141,10 +130,10 @@ const ProcessStepsAdmin: React.FC<ProcessStepsAdminProps> = ({ selectedProcessId
   };
 
   const handleUpdate = async () => {
-    if (!selectedStep || !organizationClient) return;
+    if (!selectedStep) return;
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_steps')
         .update(formData)
         .eq('id', selectedStep.id);
@@ -163,10 +152,10 @@ const ProcessStepsAdmin: React.FC<ProcessStepsAdminProps> = ({ selectedProcessId
   };
 
   const handleDelete = async (step: any) => {
-    if (!confirm(`Are you sure you want to delete "${step.name}"?`) || !organizationClient) return;
+    if (!confirm(`Are you sure you want to delete "${step.name}"?`)) return;
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_steps')
         .delete()
         .eq('id', step.id);
@@ -182,10 +171,8 @@ const ProcessStepsAdmin: React.FC<ProcessStepsAdminProps> = ({ selectedProcessId
   };
 
   const toggleActive = async (step: any) => {
-    if (!organizationClient) return;
-
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_steps')
         .update({ is_active: !step.is_active })
         .eq('id', step.id);

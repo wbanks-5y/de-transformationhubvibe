@@ -10,7 +10,7 @@ import { useCreateCockpitType, useUpdateCockpitType, useDeleteCockpitType, useTo
 import { useCockpitData } from "@/hooks/use-cockpit-data";
 import { useCockpitSections } from "@/hooks/use-cockpit-sections";
 import { useQuery } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useAdminCockpitState } from "./hooks/useAdminCockpitState";
 import { useAdminCockpitHandlers } from "./hooks/useAdminCockpitHandlers";
 import { convertMetricDisplayToCockpitMetric } from "./types/adminTypes";
@@ -27,8 +27,6 @@ import KPIEditForm from "./components/KPIEditForm";
 import CockpitSelectorBar from "./components/CockpitSelectorBar";
 
 const AdminCockpitManagement: React.FC = () => {
-  const { organizationClient } = useOrganization();
-  
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedCockpitForMetrics, setSelectedCockpitForMetrics] = useState("");
   const [selectedCockpitForInsights, setSelectedCockpitForInsights] = useState("");
@@ -40,19 +38,14 @@ const AdminCockpitManagement: React.FC = () => {
   const { data: cockpitTypes, isLoading } = useQuery({
     queryKey: ['cockpit-types'],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('cockpit_types')
         .select('*')
         .order('sort_order', { ascending: true });
       
       if (error) throw error;
       return data;
-    },
-    enabled: !!organizationClient,
+    }
   });
 
   const { data: metricsData } = useCockpitData(selectedCockpitForMetrics);

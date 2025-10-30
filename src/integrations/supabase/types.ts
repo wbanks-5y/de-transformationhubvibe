@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "12.2.3 (519615d)"
   }
   public: {
     Tables: {
@@ -863,7 +863,7 @@ export type Database = {
           accessed_at: string
           field_names: string[] | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           metadata: Json | null
           record_id: string | null
           success: boolean
@@ -875,7 +875,7 @@ export type Database = {
           accessed_at?: string
           field_names?: string[] | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           record_id?: string | null
           success?: boolean
@@ -887,7 +887,7 @@ export type Database = {
           accessed_at?: string
           field_names?: string[] | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           record_id?: string | null
           success?: boolean
@@ -977,56 +977,6 @@ export type Database = {
             columns: ["kpi_id"]
             isOneToOne: false
             referencedRelation: "cockpit_kpis"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      invitation_tokens: {
-        Row: {
-          created_at: string | null
-          email: string
-          expires_at: string
-          id: string
-          organization_id: string | null
-          organization_slug: string
-          organization_supabase_anon_key: string
-          organization_supabase_url: string
-          token: string
-          updated_at: string | null
-          used_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          email: string
-          expires_at?: string
-          id?: string
-          organization_id?: string | null
-          organization_slug: string
-          organization_supabase_anon_key: string
-          organization_supabase_url: string
-          token?: string
-          updated_at?: string | null
-          used_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          email?: string
-          expires_at?: string
-          id?: string
-          organization_id?: string | null
-          organization_slug?: string
-          organization_supabase_anon_key?: string
-          organization_supabase_url?: string
-          token?: string
-          updated_at?: string | null
-          used_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "invitation_tokens_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1537,185 +1487,6 @@ export type Database = {
         }
         Relationships: []
       }
-      organization_roles: {
-        Row: {
-          created_at: string
-          id: string
-          is_active: boolean
-          organization_id: string
-          permissions: string[]
-          role_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          organization_id: string
-          permissions?: string[]
-          role_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          organization_id?: string
-          permissions?: string[]
-          role_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "organization_roles_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "organization_roles_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "roles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      organization_user_roles: {
-        Row: {
-          assigned_at: string
-          assigned_by: string | null
-          expires_at: string | null
-          id: string
-          is_active: boolean
-          organization_id: string
-          role_id: string
-          user_id: string
-        }
-        Insert: {
-          assigned_at?: string
-          assigned_by?: string | null
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean
-          organization_id: string
-          role_id: string
-          user_id: string
-        }
-        Update: {
-          assigned_at?: string
-          assigned_by?: string | null
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean
-          organization_id?: string
-          role_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "organization_user_roles_assigned_by_fkey"
-            columns: ["assigned_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "organization_user_roles_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "organization_user_roles_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "roles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "organization_user_roles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      organizations: {
-        Row: {
-          address: Json | null
-          brand_colors: Json
-          contact_email: string | null
-          contact_phone: string | null
-          created_at: string
-          custom_domain: string | null
-          description: string | null
-          features: string[]
-          id: string
-          logo_url: string | null
-          max_users: number
-          name: string
-          settings: Json
-          slug: string
-          status: string
-          subscription_ends_at: string | null
-          subscription_starts_at: string | null
-          supabase_service_role_key: string | null
-          tier: string
-          updated_at: string
-          website: string | null
-        }
-        Insert: {
-          address?: Json | null
-          brand_colors?: Json
-          contact_email?: string | null
-          contact_phone?: string | null
-          created_at?: string
-          custom_domain?: string | null
-          description?: string | null
-          features?: string[]
-          id?: string
-          logo_url?: string | null
-          max_users?: number
-          name: string
-          settings?: Json
-          slug: string
-          status?: string
-          subscription_ends_at?: string | null
-          subscription_starts_at?: string | null
-          supabase_service_role_key?: string | null
-          tier?: string
-          updated_at?: string
-          website?: string | null
-        }
-        Update: {
-          address?: Json | null
-          brand_colors?: Json
-          contact_email?: string | null
-          contact_phone?: string | null
-          created_at?: string
-          custom_domain?: string | null
-          description?: string | null
-          features?: string[]
-          id?: string
-          logo_url?: string | null
-          max_users?: number
-          name?: string
-          settings?: Json
-          slug?: string
-          status?: string
-          subscription_ends_at?: string | null
-          subscription_starts_at?: string | null
-          supabase_service_role_key?: string | null
-          tier?: string
-          updated_at?: string
-          website?: string | null
-        }
-        Relationships: []
-      }
       process_bottlenecks: {
         Row: {
           created_at: string
@@ -2076,56 +1847,39 @@ export type Database = {
       }
       profiles: {
         Row: {
-          app_role: Database["public"]["Enums"]["app_role"]
           company: string | null
           created_at: string | null
-          email: string | null
           full_name: string | null
           id: string
           job_title: string | null
-          organization_id: string | null
           phone: string | null
           status: string
           tier: string
           updated_at: string | null
         }
         Insert: {
-          app_role?: Database["public"]["Enums"]["app_role"]
           company?: string | null
           created_at?: string | null
-          email?: string | null
           full_name?: string | null
           id: string
           job_title?: string | null
-          organization_id?: string | null
           phone?: string | null
           status?: string
           tier?: string
           updated_at?: string | null
         }
         Update: {
-          app_role?: Database["public"]["Enums"]["app_role"]
           company?: string | null
           created_at?: string | null
-          email?: string | null
           full_name?: string | null
           id?: string
           job_title?: string | null
-          organization_id?: string | null
           phone?: string | null
           status?: string
           tier?: string
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       rate_limit_attempts: {
         Row: {
@@ -2233,7 +1987,7 @@ export type Database = {
           created_at: string
           details: Json | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           masked_data: Json | null
           pii_detected: boolean | null
           pii_types: string[] | null
@@ -2251,7 +2005,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           masked_data?: Json | null
           pii_detected?: boolean | null
           pii_types?: string[] | null
@@ -2269,7 +2023,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           masked_data?: Json | null
           pii_detected?: boolean | null
           pii_types?: string[] | null
@@ -2280,39 +2034,6 @@ export type Database = {
           success?: boolean
           user_agent?: string | null
           user_id?: string | null
-        }
-        Relationships: []
-      }
-      security_event_log: {
-        Row: {
-          action: string
-          actor_user_id: string | null
-          details: Json
-          id: number
-          ip_address: string | null
-          occurred_at: string
-          success: boolean
-          target_user_id: string | null
-        }
-        Insert: {
-          action: string
-          actor_user_id?: string | null
-          details?: Json
-          id?: never
-          ip_address?: string | null
-          occurred_at?: string
-          success?: boolean
-          target_user_id?: string | null
-        }
-        Update: {
-          action?: string
-          actor_user_id?: string | null
-          details?: Json
-          id?: never
-          ip_address?: string | null
-          occurred_at?: string
-          success?: boolean
-          target_user_id?: string | null
         }
         Relationships: []
       }
@@ -3336,69 +3057,6 @@ export type Database = {
         }
         Relationships: []
       }
-      tenant_instances: {
-        Row: {
-          brand_config: Json | null
-          contact_email: string
-          contact_name: string | null
-          created_at: string | null
-          custom_domain: string | null
-          feature_flags: string[] | null
-          id: string
-          last_accessed: string | null
-          max_users: number
-          organization_name: string
-          provisioned_at: string | null
-          slug: string
-          status: string
-          supabase_anon_key: string
-          supabase_project_id: string
-          supabase_url: string
-          tier: string
-          updated_at: string | null
-        }
-        Insert: {
-          brand_config?: Json | null
-          contact_email: string
-          contact_name?: string | null
-          created_at?: string | null
-          custom_domain?: string | null
-          feature_flags?: string[] | null
-          id?: string
-          last_accessed?: string | null
-          max_users?: number
-          organization_name: string
-          provisioned_at?: string | null
-          slug: string
-          status?: string
-          supabase_anon_key: string
-          supabase_project_id: string
-          supabase_url: string
-          tier: string
-          updated_at?: string | null
-        }
-        Update: {
-          brand_config?: Json | null
-          contact_email?: string
-          contact_name?: string | null
-          created_at?: string | null
-          custom_domain?: string | null
-          feature_flags?: string[] | null
-          id?: string
-          last_accessed?: string | null
-          max_users?: number
-          organization_name?: string
-          provisioned_at?: string | null
-          slug?: string
-          status?: string
-          supabase_anon_key?: string
-          supabase_project_id?: string
-          supabase_url?: string
-          tier?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       user_preferences: {
         Row: {
           created_at: string | null
@@ -3465,7 +3123,7 @@ export type Database = {
           device_fingerprint: string | null
           expires_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           is_active: boolean
           last_activity: string
           location_data: Json | null
@@ -3478,7 +3136,7 @@ export type Database = {
           device_fingerprint?: string | null
           expires_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_active?: boolean
           last_activity?: string
           location_data?: Json | null
@@ -3491,7 +3149,7 @@ export type Database = {
           device_fingerprint?: string | null
           expires_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_active?: boolean
           last_activity?: string
           location_data?: Json | null
@@ -3518,24 +3176,15 @@ export type Database = {
       }
     }
     Functions: {
-      automated_security_response: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      automated_security_response: { Args: never; Returns: undefined }
       calculate_trend_percentage: {
         Args: { current_val: number; previous_val: number }
         Returns: number
       }
-      cleanup_rate_limit_attempts: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      decrypt_api_key: {
-        Args: { encrypted_key: string }
-        Returns: string
-      }
+      cleanup_rate_limit_attempts: { Args: never; Returns: undefined }
+      decrypt_api_key: { Args: { encrypted_key: string }; Returns: string }
       detect_security_threats: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           details: Json
           last_activity: string
@@ -3544,10 +3193,7 @@ export type Database = {
           user_id: string
         }[]
       }
-      encrypt_api_key: {
-        Args: { api_key: string }
-        Returns: string
-      }
+      encrypt_api_key: { Args: { api_key: string }; Returns: string }
       encrypt_sensitive_data: {
         Args: { data_text: string; encryption_key?: string }
         Returns: string
@@ -3561,7 +3207,7 @@ export type Database = {
         Returns: string
       }
       get_home_cockpit_aggregates: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           active_kpis: number
           avg_health_score: number
@@ -3577,7 +3223,7 @@ export type Database = {
         }[]
       }
       get_initiative_health_scores: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           health_score: number
           id: string
@@ -3590,7 +3236,7 @@ export type Database = {
         }[]
       }
       get_security_dashboard_metrics: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           action: string
           event_count: number
@@ -3605,14 +3251,7 @@ export type Database = {
         Args: { p_user_id?: string }
         Returns: Json
       }
-      get_user_organization: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_user_tier: {
-        Args: { user_id: string }
-        Returns: string
-      }
+      get_user_tier: { Args: { user_id: string }; Returns: string }
       handle_bootstrap_admin_assignment: {
         Args: { user_email: string }
         Returns: boolean
@@ -3621,46 +3260,14 @@ export type Database = {
         Args: { required_tier: string; user_id: string }
         Returns: boolean
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_admin_secure: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_app_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_approved_user: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_approved_user_secure: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_first_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_manager_or_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_manager_or_admin_secure: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_organization_admin: {
-        Args: { org_id?: string }
-        Returns: boolean
-      }
-      is_user_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_admin: { Args: never; Returns: boolean }
+      is_admin_secure: { Args: never; Returns: boolean }
+      is_approved_user: { Args: never; Returns: boolean }
+      is_approved_user_secure: { Args: never; Returns: boolean }
+      is_first_admin: { Args: never; Returns: boolean }
+      is_manager_or_admin: { Args: never; Returns: boolean }
+      is_manager_or_admin_secure: { Args: never; Returns: boolean }
+      is_user_admin: { Args: never; Returns: boolean }
       log_security_event: {
         Args: {
           p_action: string
@@ -3682,21 +3289,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      log_security_event_organization: {
-        Args: {
-          p_action: string
-          p_details?: Json
-          p_resource_id?: string
-          p_resource_type: string
-          p_severity?: string
-          p_success?: boolean
-        }
-        Returns: undefined
-      }
-      needs_bootstrap_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      needs_bootstrap_admin: { Args: never; Returns: boolean }
       replace_time_based_metric_data: {
         Args: { p_data_points: Json; p_time_metric_id: string }
         Returns: Json
@@ -3719,7 +3312,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "user" | "admin"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3846,8 +3439,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["user", "admin"],
-    },
+    Enums: {},
   },
 } as const

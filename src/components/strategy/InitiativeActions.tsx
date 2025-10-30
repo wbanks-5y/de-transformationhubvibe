@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useStrategicObjectives } from "@/hooks/use-strategic-objectives";
@@ -23,7 +23,6 @@ const InitiativeActions: React.FC<InitiativeActionsProps> = ({ initiative }) => 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
   const { data: objectives = [] } = useStrategicObjectives();
-  const { organizationClient } = useOrganization();
 
   const [editData, setEditData] = useState({
     name: initiative.name || '',
@@ -46,9 +45,7 @@ const InitiativeActions: React.FC<InitiativeActionsProps> = ({ initiative }) => 
     setIsSubmitting(true);
     
     try {
-      if (!organizationClient) throw new Error('Organization client not available');
-      
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('strategic_initiatives')
         .update({
           name: editData.name,
@@ -85,9 +82,7 @@ const InitiativeActions: React.FC<InitiativeActionsProps> = ({ initiative }) => 
     setIsSubmitting(true);
     
     try {
-      if (!organizationClient) throw new Error('Organization client not available');
-      
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('strategic_initiatives')
         .delete()
         .eq('id', initiative.id);

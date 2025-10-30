@@ -1,14 +1,12 @@
 import { supabase } from './client';
-import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Security-enhanced profile management
-export const ensureUserProfile = async (userId: string, userData?: any, client?: SupabaseClient) => {
-  const supabaseClient = client || supabase;
+export const ensureUserProfile = async (userId: string, userData?: any) => {
   if (!userId) return null;
   
   try {
     // Log security event for profile access
-    await supabaseClient.rpc('log_security_event', {
+    await supabase.rpc('log_security_event', {
       p_action: 'profile_access',
       p_resource_type: 'profile',
       p_resource_id: userId,
@@ -16,7 +14,7 @@ export const ensureUserProfile = async (userId: string, userData?: any, client?:
     });
 
     // Check if profile exists
-    const { data: existingProfile, error: fetchError } = await supabaseClient
+    const { data: existingProfile, error: fetchError } = await supabase
       .from('profiles')
       .select()
       .eq('id', userId)
@@ -33,7 +31,7 @@ export const ensureUserProfile = async (userId: string, userData?: any, client?:
     }
     
     // Otherwise create profile with enhanced security
-    const { data: user } = await supabaseClient.auth.getUser();
+    const { data: user } = await supabase.auth.getUser();
     const userMetadata = user?.user?.user_metadata || {};
     
     const profileData = {
@@ -45,7 +43,7 @@ export const ensureUserProfile = async (userId: string, userData?: any, client?:
       updated_at: new Date().toISOString()
     };
     
-    const { data: newProfile, error: insertError } = await supabaseClient
+    const { data: newProfile, error: insertError } = await supabase
       .from('profiles')
       .insert(profileData)
       .select()
@@ -53,7 +51,7 @@ export const ensureUserProfile = async (userId: string, userData?: any, client?:
       
     if (insertError) {
       console.error("Error creating profile:", insertError);
-      await supabaseClient.rpc('log_security_event', {
+      await supabase.rpc('log_security_event', {
         p_action: 'profile_creation_failed',
         p_resource_type: 'profile',
         p_resource_id: userId,
@@ -63,7 +61,7 @@ export const ensureUserProfile = async (userId: string, userData?: any, client?:
       return null;
     }
 
-    await supabaseClient.rpc('log_security_event', {
+    await supabase.rpc('log_security_event', {
       p_action: 'profile_created',
       p_resource_type: 'profile',
       p_resource_id: userId,
@@ -73,7 +71,7 @@ export const ensureUserProfile = async (userId: string, userData?: any, client?:
     return newProfile;
   } catch (error) {
     console.error("Error in ensureUserProfile:", error);
-    await supabaseClient.rpc('log_security_event', {
+    await supabase.rpc('log_security_event', {
       p_action: 'profile_error',
       p_resource_type: 'profile',
       p_resource_id: userId,

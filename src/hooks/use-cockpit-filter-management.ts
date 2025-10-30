@@ -1,18 +1,14 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export const useCreateCockpitFilter = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async (filterData: any) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('cockpit_filters')
         .insert([filterData])
         .select()
@@ -34,14 +30,10 @@ export const useCreateCockpitFilter = () => {
 
 export const useUpdateCockpitFilter = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('cockpit_filters')
         .update(updates)
         .eq('id', id)
@@ -64,14 +56,10 @@ export const useUpdateCockpitFilter = () => {
 
 export const useDeleteCockpitFilter = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async (id: string) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('cockpit_filters')
         .delete()
         .eq('id', id);

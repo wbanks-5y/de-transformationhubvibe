@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useOrganization } from '@/context/OrganizationContext';
 import { useUserPreferences } from '@/context/UserPreferencesContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -23,7 +22,6 @@ type UserProfile = {
 
 export default function UserProfile() {
   const { user } = useAuth();
-  const { organizationClient } = useOrganization();
   const { preferences, updatePreference, resetPreferences } = useUserPreferences();
   const [profile, setProfile] = useState<UserProfile>({
     full_name: '',
@@ -37,10 +35,10 @@ export default function UserProfile() {
 
   useEffect(() => {
     const loadUserProfile = async () => {
-      if (!user || !organizationClient) return;
+      if (!user) return;
       
       try {
-        const { data, error } = await organizationClient
+        const { data, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
@@ -64,14 +62,14 @@ export default function UserProfile() {
     };
 
     loadUserProfile();
-  }, [user, organizationClient]);
+  }, [user]);
 
   const handleSaveProfile = async () => {
-    if (!user || !organizationClient) return;
+    if (!user) return;
     
     setIsSaving(true);
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('profiles')
         .upsert({
           id: user.id,

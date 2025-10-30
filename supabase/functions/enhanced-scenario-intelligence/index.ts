@@ -115,10 +115,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in enhanced-scenario-intelligence:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ 
       success: false, 
-      error: errorMessage 
+      error: error.message 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -324,7 +323,7 @@ function createDataBaseline(cockpitData: CockpitData[]): any {
         baseline.kpis_with_targets++;
         cockpitSummary.kpis_with_targets++;
 
-        if (kpi.current_value !== null && kpi.target_value && kpi.target_value > 0 && kpi.current_value !== undefined) {
+        if (kpi.current_value !== null && kpi.target_value > 0) {
           const achievement = kpi.trend_direction === 'lower_is_better' 
             ? Math.min((kpi.target_value / kpi.current_value) * 100, 100)
             : Math.min((kpi.current_value / kpi.target_value) * 100, 100);

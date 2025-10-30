@@ -163,8 +163,8 @@ const ResetPassword = () => {
       // Sign out the user to ensure they use the new password
       await supabase.auth.signOut();
       
-      // Redirect to root with success message
-      navigate('/', { 
+      // Redirect to login with success message
+      navigate('/login', { 
         state: { 
           message: 'Your password has been updated successfully. Please log in with your new password.',
           type: 'success'
@@ -221,7 +221,7 @@ const ResetPassword = () => {
               </Button>
               <Button 
                 variant="outline"
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/login')}
                 className="w-full"
               >
                 Back to Login
@@ -364,7 +364,7 @@ const ResetPassword = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/login')}
               className="w-full"
             >
               Back to Login

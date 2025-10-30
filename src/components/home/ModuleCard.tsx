@@ -27,7 +27,7 @@ const ModuleCard: React.FC<ModuleCardProps> = ({ module, cockpitAggregate }) => 
   // Use actual performance percentage from database
   const performanceValue = cockpitAggregate ? Math.round(cockpitAggregate.performance_percentage) : null;
 
-  console.log("ModuleCard rendering:", {
+  console.log("🎨 ModuleCard rendering:", {
     moduleTitle: module.title,
     moduleColor: module.color,
     aggregateColor: cockpitAggregate?.color,
@@ -39,7 +39,7 @@ const ModuleCard: React.FC<ModuleCardProps> = ({ module, cockpitAggregate }) => 
     // Priority 1: Use cockpitAggregate.color (HEX from database)
     if (cockpitAggregate?.color) {
       const hexColor = cockpitAggregate.color;
-      console.log("Using cockpit aggregate color:", hexColor);
+      console.log("🎨 Using cockpit aggregate color:", hexColor);
       
       // Enhanced HEX color mapping with more professional colors
       const hexColorMap: Record<string, ColorScheme> = {
@@ -140,7 +140,7 @@ const ModuleCard: React.FC<ModuleCardProps> = ({ module, cockpitAggregate }) => 
       }
       
       // For unmapped HEX colors, return with custom properties
-      console.log("Using custom hex color:", hexColor);
+      console.log("🎨 Using custom hex color:", hexColor);
       return {
         progress: 'bg-slate-400',
         background: 'bg-slate-50/80',
@@ -156,7 +156,7 @@ const ModuleCard: React.FC<ModuleCardProps> = ({ module, cockpitAggregate }) => 
     // Priority 2: Use module.color (could be HEX or Tailwind)
     if (module.color) {
       const colorStr = module.color;
-      console.log("Using module color:", colorStr);
+      console.log("🎨 Using module color:", colorStr);
       
       // Check if it's a HEX color in module.color
       if (colorStr.startsWith('#')) {
@@ -207,7 +207,7 @@ const ModuleCard: React.FC<ModuleCardProps> = ({ module, cockpitAggregate }) => 
       
       if (bgColorMatch) {
         const colorName = bgColorMatch[1];
-        console.log("Using Tailwind color scheme:", colorName);
+        console.log("🎨 Using Tailwind color scheme:", colorName);
         return {
           progress: `bg-${colorName}-500`,
           background: `bg-${colorName}-50/80`,
@@ -221,7 +221,7 @@ const ModuleCard: React.FC<ModuleCardProps> = ({ module, cockpitAggregate }) => 
     }
     
     // Priority 3: Default to refined blue theme
-    console.log("Using default blue color scheme");
+    console.log("🎨 Using default blue color scheme");
     return {
       progress: 'bg-blue-500',
       background: 'bg-blue-50/80',

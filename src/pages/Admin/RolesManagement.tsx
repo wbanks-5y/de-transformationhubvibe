@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useOrganization } from "@/context/OrganizationContext";
 import {
   Card,
   CardContent,
@@ -82,7 +81,6 @@ type AssignRoleFormValues = z.infer<typeof assignRoleFormSchema>;
 type UserRoleFormValues = z.infer<typeof userRoleFormSchema>;
 
 const RolesManagement = () => {
-  const { organizationClient } = useOrganization();
   const [roles, setRoles] = useState<any[]>([]);
   const [usersWithRoles, setUsersWithRoles] = useState<any[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -120,30 +118,18 @@ const RolesManagement = () => {
 
   // Centralized data refresh function
   const refreshData = async () => {
-    if (!organizationClient) {
-      toast.error("Organization not connected. Please select an organization.");
-      setIsLoading(false);
-      return;
-    }
-
     try {
       setIsLoading(true);
       const [rolesData, usersWithRolesData] = await Promise.all([
-        getRoles(organizationClient),
-        getUsersWithRoles(organizationClient)
+        getRoles(),
+        getUsersWithRoles()
       ]);
       setRoles(rolesData);
       setUsersWithRoles(usersWithRolesData);
       toast.success("Data refreshed successfully");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error refreshing data:", error);
-      
-      // Check for specific database function errors
-      if (error?.message?.includes('is_admin_secure') || error?.code === 'PGRST202') {
-        toast.error("Database functions missing. Please check Admin → Approve Admin page for setup instructions.");
-      } else {
-        toast.error("Failed to refresh data");
-      }
+      toast.error("Failed to refresh data");
     } finally {
       setIsLoading(false);
     }
@@ -169,22 +155,17 @@ const RolesManagement = () => {
 
   // Handle role form submission (create or edit)
   const handleRoleFormSubmit = async (data: RoleFormValues) => {
-    if (!organizationClient) {
-      toast.error("Organization not connected");
-      return;
-    }
-
     try {
       if (isEditMode && currentRole) {
         // Update existing role
-        const updatedRole = await updateRole(currentRole.id, data.name, data.description, organizationClient);
+        const updatedRole = await updateRole(currentRole.id, data.name, data.description);
         if (updatedRole) {
           toast.success("Role updated successfully");
           await refreshData();
         }
       } else {
         // Create new role
-        const newRole = await createRole(data.name, data.description, organizationClient);
+        const newRole = await createRole(data.name, data.description);
         if (newRole) {
           toast.success("Role created successfully");
           await refreshData();
@@ -204,17 +185,9 @@ const RolesManagement = () => {
 
   // Handle assign role form submission
   const handleAssignRoleSubmit = async (data: AssignRoleFormValues) => {
-    if (!organizationClient) {
-      toast.error("Organization not connected");
-      return;
-    }
-
     try {
-      const result = await assignRoleToUser(data.userId, data.roleId, organizationClient);
-      
-      if (result.isDuplicate) {
-        toast.info("User already has this role");
-      } else {
+      const result = await assignRoleToUser(data.userId, data.roleId);
+      if (result) {
         toast.success("Role assigned successfully");
         await refreshData();
       }
@@ -222,57 +195,44 @@ const RolesManagement = () => {
       // Reset and close dialog
       assignRoleForm.reset();
       setIsAssignDialogOpen(false);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to assign role");
+    } catch (error) {
+      toast.error("An error occurred");
       console.error("Error assigning role:", error);
     }
   };
 
   // Handle individual user role assignment
   const handleUserRoleAssignment = async (data: UserRoleFormValues) => {
-    if (!organizationClient) {
-      toast.error("Organization not connected");
-      return;
-    }
-
     try {
-      const result = await assignRoleToUser(currentUserId, data.roleId, organizationClient);
-      
-      if (result.isDuplicate) {
-        toast.info("User already has this role");
-      } else {
+      const result = await assignRoleToUser(currentUserId, data.roleId);
+      if (result) {
         toast.success("Role assigned successfully");
         await refreshData();
+        
+        // Close the specific user dialog and reset form
+        setUserAssignDialogStates(prev => ({
+          ...prev,
+          [currentUserId]: false
+        }));
+        
+        userRoleForm.reset();
+        setCurrentUserId("");
       }
-      
-      // Close the specific user dialog and reset form
-      setUserAssignDialogStates(prev => ({
-        ...prev,
-        [currentUserId]: false
-      }));
-      
-      userRoleForm.reset();
-      setCurrentUserId("");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to assign role");
+    } catch (error) {
+      toast.error("An error occurred");
       console.error("Error assigning role:", error);
     }
   };
 
   // Handle role deletion
   const handleDeleteRole = async (roleId: string) => {
-    if (!organizationClient) {
-      toast.error("Organization not connected");
-      return;
-    }
-
     console.log("Delete role clicked for ID:", roleId);
     
     if (window.confirm("Are you sure you want to delete this role? This will also remove it from all users.")) {
       console.log("User confirmed deletion");
       try {
         console.log("Calling deleteRole function...");
-        const success = await deleteRole(roleId, organizationClient);
+        const success = await deleteRole(roleId);
         console.log("Delete role result:", success);
         
         if (success) {
@@ -305,17 +265,14 @@ const RolesManagement = () => {
 
   // Handle removing a role from a user
   const handleRemoveRoleFromUser = async (userId: string, roleId: string) => {
-    if (!organizationClient) {
-      toast.error("Organization not connected");
-      return;
-    }
-
     try {
-      await removeRoleFromUser(userId, roleId, organizationClient);
-      toast.success("Role removed from user");
-      await refreshData();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to remove role");
+      const success = await removeRoleFromUser(userId, roleId);
+      if (success) {
+        toast.success("Role removed from user");
+        await refreshData();
+      }
+    } catch (error) {
+      toast.error("An error occurred");
       console.error("Error removing role from user:", error);
     }
   };
@@ -334,24 +291,6 @@ const RolesManagement = () => {
       setCurrentUserId("");
     }
   };
-
-  if (!organizationClient) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold">Role Management</h2>
-          <p className="text-muted-foreground">Define and manage user roles and permissions</p>
-        </div>
-        <Card>
-          <CardContent className="py-8">
-            <p className="text-center text-muted-foreground">
-              Please select an organization to manage roles.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

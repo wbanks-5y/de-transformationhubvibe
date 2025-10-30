@@ -1,17 +1,12 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useStrategicHealthPeriods = (selectedPeriod: string = 'current') => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['strategic-health-periods', selectedPeriod],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('strategic_objective_health_periods')
         .select(`
           *,
@@ -30,7 +25,6 @@ export const useStrategicHealthPeriods = (selectedPeriod: string = 'current') =>
 
       if (error) throw error;
       return data || [];
-    },
-    enabled: !!organizationClient,
+    }
   });
 };

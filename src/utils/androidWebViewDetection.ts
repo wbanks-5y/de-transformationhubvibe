@@ -51,7 +51,7 @@ export const isAndroidEnvironment = (): boolean => {
   
   // Explicitly exclude iOS devices first
   if (userAgent.includes('iphone') || userAgent.includes('ipad') || userAgent.includes('ipod')) {
-    console.log('iOS device detected, excluding from Android environment');
+    console.log('🤖 iOS device detected, excluding from Android environment');
     return false;
   }
   
@@ -69,7 +69,7 @@ export const isAndroidEnvironment = (): boolean => {
   const hasTouch = 'ontouchstart' in window;
   const isMobileScreen = window.innerWidth <= 768;
   
-  console.log('Android environment check:', { 
+  console.log('🤖 Android environment check:', { 
     isAndroid, 
     isMobile, 
     isWebView, 
@@ -95,7 +95,7 @@ export const useAndroidOptimization = () => {
   const isAndroid = isAndroidEnvironment();
   const isWebView = isAndroidWebView();
   
-  console.log('Android Detection:', { 
+  console.log('🤖 Android Detection:', { 
     isAndroid, 
     isWebView, 
     userAgent: navigator.userAgent.slice(0, 100) + '...',

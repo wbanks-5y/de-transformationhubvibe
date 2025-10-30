@@ -1,20 +1,15 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export const useCockpitSections = (cockpitTypeId: string) => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['cockpit-sections', cockpitTypeId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
       if (!cockpitTypeId) return [];
       
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('cockpit_sections')
         .select('*')
         .eq('cockpit_type_id', cockpitTypeId)
@@ -23,13 +18,12 @@ export const useCockpitSections = (cockpitTypeId: string) => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!cockpitTypeId && !!organizationClient
+    enabled: !!cockpitTypeId
   });
 };
 
 export const useCreateCockpitSection = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async (data: {
@@ -40,10 +34,7 @@ export const useCreateCockpitSection = () => {
       sort_order?: number;
       is_active?: boolean;
     }) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { data: section, error } = await organizationClient
+      const { data: section, error } = await supabase
         .from('cockpit_sections')
         .insert(data)
         .select()
@@ -65,7 +56,6 @@ export const useCreateCockpitSection = () => {
 
 export const useUpdateCockpitSection = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async ({ id, updates }: {
@@ -78,10 +68,7 @@ export const useUpdateCockpitSection = () => {
         is_active?: boolean;
       };
     }) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { data: section, error } = await organizationClient
+      const { data: section, error } = await supabase
         .from('cockpit_sections')
         .update(updates)
         .eq('id', id)
@@ -104,14 +91,10 @@ export const useUpdateCockpitSection = () => {
 
 export const useDeleteCockpitSection = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async (id: string) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('cockpit_sections')
         .delete()
         .eq('id', id);

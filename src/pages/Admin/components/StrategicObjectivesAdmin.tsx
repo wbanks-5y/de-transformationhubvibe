@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useStrategicObjectives } from "@/hooks/use-strategic-objectives";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Edit, Trash2, Save, X } from "lucide-react";
 import {
@@ -34,7 +34,6 @@ interface ObjectiveFormData {
 }
 
 const StrategicObjectivesAdmin: React.FC = () => {
-  const { organizationClient } = useOrganization();
   const { data: objectives = [], refetch } = useStrategicObjectives();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -59,14 +58,9 @@ const StrategicObjectivesAdmin: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!organizationClient) {
-      toast.error('Organization not available');
-      return;
-    }
-    
     try {
       if (editingId) {
-        const { error } = await organizationClient
+        const { error } = await supabase
           .from('strategic_objectives')
           .update(formData)
           .eq('id', editingId);
@@ -75,7 +69,7 @@ const StrategicObjectivesAdmin: React.FC = () => {
         toast.success("Objective updated successfully");
         setEditingId(null);
       } else {
-        const { error } = await organizationClient
+        const { error } = await supabase
           .from('strategic_objectives')
           .insert([formData]);
         
@@ -97,11 +91,7 @@ const StrategicObjectivesAdmin: React.FC = () => {
       
       refetch();
     } catch (error: any) {
-      console.error('Error saving objective:', error);
-      const errorMessage = error?.message || "Failed to save objective";
-      const errorDetails = error?.details ? ` - ${error.details}` : '';
-      const errorHint = error?.hint ? ` (${error.hint})` : '';
-      toast.error(`${errorMessage}${errorDetails}${errorHint}`);
+      toast.error("Error saving objective: " + error.message);
     }
   };
 
@@ -122,13 +112,8 @@ const StrategicObjectivesAdmin: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this objective?")) return;
     
-    if (!organizationClient) {
-      toast.error('Organization not available');
-      return;
-    }
-    
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('strategic_objectives')
         .delete()
         .eq('id', id);
@@ -137,11 +122,7 @@ const StrategicObjectivesAdmin: React.FC = () => {
       toast.success("Objective deleted successfully");
       refetch();
     } catch (error: any) {
-      console.error('Error deleting objective:', error);
-      const errorMessage = error?.message || "Failed to delete objective";
-      const errorDetails = error?.details ? ` - ${error.details}` : '';
-      const errorHint = error?.hint ? ` (${error.hint})` : '';
-      toast.error(`${errorMessage}${errorDetails}${errorHint}`);
+      toast.error("Error deleting objective: " + error.message);
     }
   };
 

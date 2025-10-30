@@ -1,19 +1,15 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 import { CockpitKPI } from '@/types/cockpit';
 import { toast } from 'sonner';
 
 export const useCreateCockpitKPI = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async (kpiData: Omit<CockpitKPI, 'id' | 'created_at' | 'updated_at'>) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('cockpit_kpis')
         .insert(kpiData)
         .select()
@@ -34,14 +30,10 @@ export const useCreateCockpitKPI = () => {
 
 export const useUpdateCockpitKPI = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<CockpitKPI> }) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('cockpit_kpis')
         .update(updates)
         .eq('id', id)
@@ -63,14 +55,10 @@ export const useUpdateCockpitKPI = () => {
 
 export const useDeleteCockpitKPI = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async (id: string) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('cockpit_kpis')
         .delete()
         .eq('id', id);

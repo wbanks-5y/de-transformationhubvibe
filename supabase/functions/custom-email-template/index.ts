@@ -67,9 +67,8 @@ const handler = async (req: Request): Promise<Response> => {
     );
   } catch (error) {
     console.error("Error in custom-email-template function:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: error.message || "Unknown error occurred" }),
       { 
         status: 500, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 

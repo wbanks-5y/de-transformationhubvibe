@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus } from "lucide-react";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useStrategicObjectives } from "@/hooks/use-strategic-objectives";
 import { useQueryClient } from "@tanstack/react-query";
@@ -20,7 +20,6 @@ const AddResourceDialog: React.FC<AddResourceDialogProps> = ({ children }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: objectives = [] } = useStrategicObjectives();
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
 
   const [formData, setFormData] = useState({
     initiative_id: '',
@@ -45,9 +44,7 @@ const AddResourceDialog: React.FC<AddResourceDialogProps> = ({ children }) => {
 
     setIsSubmitting(true);
     try {
-      if (!organizationClient) throw new Error('Organization client not available');
-      
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('strategic_resource_allocations')
         .insert([{
           initiative_id: formData.initiative_id,

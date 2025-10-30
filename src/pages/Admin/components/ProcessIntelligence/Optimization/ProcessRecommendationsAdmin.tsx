@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Plus, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -27,7 +27,6 @@ interface RecommendationFormData {
 }
 
 const ProcessRecommendationsAdmin: React.FC<ProcessRecommendationsAdminProps> = ({ selectedProcessId }) => {
-  const { organizationClient } = useOrganization();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedRecommendation, setSelectedRecommendation] = useState<any>(null);
@@ -44,9 +43,9 @@ const ProcessRecommendationsAdmin: React.FC<ProcessRecommendationsAdminProps> = 
   const { data: recommendations = [], refetch, isLoading } = useQuery({
     queryKey: ['process-recommendations', selectedProcessId],
     queryFn: async () => {
-      if (!selectedProcessId || !organizationClient) return [];
+      if (!selectedProcessId) return [];
       
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('process_recommendations')
         .select('*')
         .eq('process_id', selectedProcessId)
@@ -55,7 +54,7 @@ const ProcessRecommendationsAdmin: React.FC<ProcessRecommendationsAdminProps> = 
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedProcessId && !!organizationClient,
+    enabled: !!selectedProcessId,
   });
 
   const resetForm = () => {
@@ -71,13 +70,13 @@ const ProcessRecommendationsAdmin: React.FC<ProcessRecommendationsAdminProps> = 
   };
 
   const handleCreate = async () => {
-    if (!selectedProcessId || !organizationClient) {
+    if (!selectedProcessId) {
       toast.error("Please select a process first");
       return;
     }
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_recommendations')
         .insert([{
           ...formData,
@@ -111,10 +110,10 @@ const ProcessRecommendationsAdmin: React.FC<ProcessRecommendationsAdminProps> = 
   };
 
   const handleUpdate = async () => {
-    if (!selectedRecommendation || !organizationClient) return;
+    if (!selectedRecommendation) return;
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_recommendations')
         .update(formData)
         .eq('id', selectedRecommendation.id);
@@ -133,10 +132,10 @@ const ProcessRecommendationsAdmin: React.FC<ProcessRecommendationsAdminProps> = 
   };
 
   const handleDelete = async (recommendation: any) => {
-    if (!confirm(`Are you sure you want to delete "${recommendation.title}"?`) || !organizationClient) return;
+    if (!confirm(`Are you sure you want to delete "${recommendation.title}"?`)) return;
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_recommendations')
         .delete()
         .eq('id', recommendation.id);
@@ -152,10 +151,8 @@ const ProcessRecommendationsAdmin: React.FC<ProcessRecommendationsAdminProps> = 
   };
 
   const toggleActive = async (recommendation: any) => {
-    if (!organizationClient) return;
-
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_recommendations')
         .update({ is_active: !recommendation.is_active })
         .eq('id', recommendation.id);

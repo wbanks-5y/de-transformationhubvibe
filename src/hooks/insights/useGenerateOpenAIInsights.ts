@@ -1,6 +1,6 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 import { generateOpenAIInsights } from '@/services/openaiInsightsService';
 import { toast } from 'sonner';
 
@@ -19,7 +19,6 @@ function getDaysFromTimeRange(timeRange: string): number {
 
 export const useGenerateOpenAIInsights = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
 
   return useMutation({
     mutationFn: async ({ 
@@ -33,9 +32,6 @@ export const useGenerateOpenAIInsights = () => {
       cockpitDisplayName?: string;
       replaceExisting?: boolean;
     }) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
       console.log('Starting OpenAI insights generation for cockpit:', cockpitTypeId);
       
       const days = getDaysFromTimeRange(timeRange);
@@ -43,7 +39,7 @@ export const useGenerateOpenAIInsights = () => {
       startDate.setDate(startDate.getDate() - days);
       
       // Fetch cockpit data
-      const { data: cockpitData, error: cockpitError } = await organizationClient
+      const { data: cockpitData, error: cockpitError } = await supabase
         .from('cockpit_types')
         .select(`
           *,
@@ -83,7 +79,7 @@ export const useGenerateOpenAIInsights = () => {
       }
 
       // Save insights to database
-      const { data: savedInsights, error: saveError } = await organizationClient
+      const { data: savedInsights, error: saveError } = await supabase
         .from('cockpit_insights')
         .insert(
           insights.map(insight => ({

@@ -27,7 +27,7 @@ const DynamicCockpitContent: React.FC<{ cockpitType: string }> = ({ cockpitType 
   const { data: kpis, isLoading: kpisLoading } = useCockpitKPIs(cockpitData?.cockpitType?.id);
   const { data: insights, isLoading: insightsLoading } = useCockpitInsights(cockpitData?.cockpitType?.id);
 
-  console.log(`DynamicCockpit [${cockpitType}] render:`, {
+  console.log(`🚀 DynamicCockpit [${cockpitType}] render:`, {
     authLoading,
     hasUser: !!user,
     hasSession: !!session,
@@ -48,7 +48,7 @@ const DynamicCockpitContent: React.FC<{ cockpitType: string }> = ({ cockpitType 
 
   // Show auth-specific error if no session
   if (!user || !session) {
-    console.error('No auth session for cockpit');
+    console.error('🔐 No auth session for cockpit');
     return (
       <div className="container mx-auto p-4 lg:p-8">
         <Alert>
@@ -62,7 +62,7 @@ const DynamicCockpitContent: React.FC<{ cockpitType: string }> = ({ cockpitType 
   }
 
   if (error || !cockpitData) {
-    console.error('Cockpit error:', error);
+    console.error('❌ Cockpit error:', error);
     return (
       <div className="container mx-auto p-4 lg:p-8">
         <Alert>
@@ -74,7 +74,7 @@ const DynamicCockpitContent: React.FC<{ cockpitType: string }> = ({ cockpitType 
             </span>
             <button
               onClick={() => {
-                console.log('Retry button clicked');
+                console.log('🔄 Retry button clicked');
                 refetch();
               }}
               className="ml-4 px-3 py-1 bg-primary text-white rounded-md text-sm hover:bg-primary/90 transition-colors flex items-center gap-1"
@@ -149,7 +149,7 @@ const DynamicCockpit: React.FC = () => {
   const { cockpitType } = useParams<{ cockpitType: string }>();
   
   if (!cockpitType) {
-    console.error('DynamicCockpit: No cockpit type provided in URL params');
+    console.error('❌ DynamicCockpit: No cockpit type provided in URL params');
     return (
       <div className="container mx-auto p-4 lg:p-8">
         <Alert>

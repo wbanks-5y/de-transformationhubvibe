@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 function getDaysFromTimeRange(timeRange: string): number {
@@ -17,7 +17,6 @@ function getDaysFromTimeRange(timeRange: string): number {
 
 export const useGenerateAIInsights = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
 
   return useMutation({
     mutationFn: async ({ 
@@ -29,16 +28,13 @@ export const useGenerateAIInsights = () => {
       timeRange?: string;
       replaceExisting?: boolean;
     }) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
       console.log('Starting AI insights generation for cockpit:', cockpitTypeId);
       
       try {
         // If replaceExisting is true, deactivate existing insights
         if (replaceExisting) {
           console.log('Deactivating existing insights...');
-          const { error: deactivateError } = await organizationClient
+          const { error: deactivateError } = await supabase
             .from('cockpit_insights')
             .update({ is_active: false })
             .eq('cockpit_type_id', cockpitTypeId);
@@ -52,7 +48,7 @@ export const useGenerateAIInsights = () => {
         console.log('Fetching cockpit data...');
         
         // Fetch cockpit type data
-        const { data: cockpitData, error: cockpitError } = await organizationClient
+        const { data: cockpitData, error: cockpitError } = await supabase
           .from('cockpit_types')
           .select('*')
           .eq('id', cockpitTypeId)
@@ -68,7 +64,7 @@ export const useGenerateAIInsights = () => {
         }
 
         // Fetch sections
-        const { data: sectionsData, error: sectionsError } = await organizationClient
+        const { data: sectionsData, error: sectionsError } = await supabase
           .from('cockpit_sections')
           .select('*')
           .eq('cockpit_type_id', cockpitTypeId)
@@ -84,7 +80,7 @@ export const useGenerateAIInsights = () => {
         let metricsData: any[] = [];
         
         if (sectionIds.length > 0) {
-          const { data: baseMetrics, error: metricsError } = await organizationClient
+          const { data: baseMetrics, error: metricsError } = await supabase
             .from('metric_base')
             .select(`
               *,
@@ -103,7 +99,7 @@ export const useGenerateAIInsights = () => {
         }
 
         // Fetch KPIs
-        const { data: kpisData, error: kpisError } = await organizationClient
+        const { data: kpisData, error: kpisError } = await supabase
           .from('cockpit_kpis')
           .select('*')
           .eq('cockpit_type_id', cockpitTypeId)
@@ -188,10 +184,10 @@ export const useGenerateAIInsights = () => {
         console.log('Calling Myles chat function for AI analysis...');
         
         // Call the Myles chat function
-        const { data: aiResponse, error: aiError } = await organizationClient.functions.invoke('myles-chat', {
+        const { data: aiResponse, error: aiError } = await supabase.functions.invoke('myles-chat', {
           body: {
             prompt: analysisPrompt,
-            userId: (await organizationClient.auth.getUser()).data.user?.id,
+            userId: (await supabase.auth.getUser()).data.user?.id,
             moduleContext: cockpitData.name
           }
         });
@@ -344,7 +340,7 @@ export const useGenerateAIInsights = () => {
           is_active: true
         }));
 
-        const { data: savedInsights, error: saveError } = await organizationClient
+        const { data: savedInsights, error: saveError } = await supabase
           .from('cockpit_insights')
           .insert(insightsToSave)
           .select();

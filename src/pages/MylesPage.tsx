@@ -32,7 +32,7 @@ const MylesPage: React.FC = () => {
               <AlertDescription className="alert-content">
                 <span className="alert-text">Sign in to save your chat history across sessions.</span>
                 <Button asChild variant="outline" size="sm" className="alert-button">
-                  <Link to="/">Sign In</Link>
+                  <Link to="/login">Sign In</Link>
                 </Button>
               </AlertDescription>
             </Alert>

@@ -8,7 +8,7 @@ const AndroidBottomNavigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  console.log('AndroidBottomNavigation render:', { 
+  console.log('🤖 AndroidBottomNavigation render:', { 
     currentPath: location.pathname 
   });
 
@@ -28,7 +28,7 @@ const AndroidBottomNavigation = () => {
   };
 
   const handleNavItemClick = (item: any) => {
-    console.log('Nav item clicked:', item.name, 'navigating to:', item.href);
+    console.log('🤖 Nav item clicked:', item.name, 'navigating to:', item.href);
     navigate(item.href);
   };
 

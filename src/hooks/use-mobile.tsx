@@ -23,7 +23,7 @@ export function useIsMobile() {
       // Force mobile mode for small viewports or clear mobile devices
       const shouldBeMobile = isMobileViewport || (hasSmallScreen && (isMobileUserAgent || isTouchDevice))
       
-      console.log('Mobile detection:', { 
+      console.log('🤖 Mobile detection:', { 
         windowWidth, 
         windowHeight, 
         isMobileViewport, 

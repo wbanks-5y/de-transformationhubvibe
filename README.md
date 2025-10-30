@@ -68,4 +68,3 @@ Lead Developer: **Paul Saxton**
 Yes! You can connect a custom domain to your deployed application.
 
 To connect a domain, navigate to your hosting provider's settings and configure your DNS settings to point to your deployment.
-"# TransformationHub" 

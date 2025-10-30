@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Save, Building2, Users, Target, Briefcase } from "lucide-react";
 
@@ -34,8 +34,6 @@ interface CompanyProfile {
 }
 
 const CompanyProfile: React.FC = () => {
-  const { organizationClient } = useOrganization();
-  
   const [profile, setProfile] = useState<CompanyProfile>({
     company_name: '',
     description: '',
@@ -61,21 +59,13 @@ const CompanyProfile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    if (organizationClient) {
-      fetchCompanyProfile();
-    }
-  }, [organizationClient]);
+    fetchCompanyProfile();
+  }, []);
 
   const fetchCompanyProfile = async () => {
-    if (!organizationClient) {
-      console.log('No organization client available');
-      setIsLoading(false);
-      return;
-    }
-    
     try {
       setIsLoading(true);
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('company_profile')
         .select('*')
         .maybeSingle();
@@ -99,11 +89,6 @@ const CompanyProfile: React.FC = () => {
   };
 
   const saveProfile = async () => {
-    if (!organizationClient) {
-      toast.error('Organization not available');
-      return;
-    }
-    
     try {
       setIsSaving(true);
       
@@ -116,7 +101,7 @@ const CompanyProfile: React.FC = () => {
       let result;
       if (profile.id) {
         // Update existing profile
-        result = await organizationClient
+        result = await supabase
           .from('company_profile')
           .update(profile)
           .eq('id', profile.id)
@@ -124,7 +109,7 @@ const CompanyProfile: React.FC = () => {
           .single();
       } else {
         // Create new profile
-        result = await organizationClient
+        result = await supabase
           .from('company_profile')
           .insert([profile])
           .select()

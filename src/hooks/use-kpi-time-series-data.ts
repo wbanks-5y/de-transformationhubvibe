@@ -1,6 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 import { CockpitKPITimeBased } from '@/types/cockpit';
 
 export interface KPITimeSeriesData {
@@ -23,14 +23,9 @@ export const useKPITimeSeriesData = (
   endDate?: string,
   limit?: number
 ) => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['kpi-time-series-data', kpiId, startDate, endDate, limit],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
       console.log('Fetching KPI time series data:', { kpiId, startDate, endDate, limit });
       
       if (!kpiId) {
@@ -38,7 +33,7 @@ export const useKPITimeSeriesData = (
         return [];
       }
 
-      let query = organizationClient
+      let query = supabase
         .from('cockpit_kpi_time_based')
         .select('*')
         .eq('kpi_id', kpiId)
@@ -82,24 +77,19 @@ export const useKPITimeSeriesData = (
       
       return transformedData;
     },
-    enabled: !!kpiId && !!organizationClient,
+    enabled: !!kpiId,
     staleTime: 30 * 1000,
     gcTime: 2 * 60 * 1000,
   });
 };
 
 export const useKPILatestTimeSeriesValue = (kpiId: string) => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['kpi-latest-time-series', kpiId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
       console.log('Fetching latest KPI time series value for:', kpiId);
       
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('cockpit_kpi_time_based')
         .select('*')
         .eq('kpi_id', kpiId)
@@ -130,7 +120,7 @@ export const useKPILatestTimeSeriesValue = (kpiId: string) => {
         updated_at: data.updated_at
       } as KPITimeSeriesData;
     },
-    enabled: !!kpiId && !!organizationClient,
+    enabled: !!kpiId,
     staleTime: 30 * 1000,
     gcTime: 2 * 60 * 1000,
   });

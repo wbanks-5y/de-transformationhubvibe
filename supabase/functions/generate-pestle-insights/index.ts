@@ -245,10 +245,9 @@ Important:
 
   } catch (error) {
     console.error('Error in generate-pestle-insights function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to generate PESTLE insights';
     return new Response(
       JSON.stringify({ 
-        error: errorMessage
+        error: error.message || 'Failed to generate PESTLE insights'
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

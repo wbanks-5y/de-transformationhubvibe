@@ -1,5 +1,6 @@
+
 import { useQuery } from "@tanstack/react-query";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface ProcessStepDuration {
   id: string;
@@ -32,16 +33,10 @@ export interface ProcessInefficiency {
 }
 
 export const useProcessStepDurations = (processId: string) => {
-  const { organizationClient } = useOrganization();
-  
   return useQuery({
     queryKey: ['process-step-durations', processId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('Organization client not available');
-      }
-      
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('process_step_durations')
         .select('*')
         .eq('process_id', processId)
@@ -54,21 +49,15 @@ export const useProcessStepDurations = (processId: string) => {
 
       return data as ProcessStepDuration[];
     },
-    enabled: !!processId && !!organizationClient,
+    enabled: !!processId,
   });
 };
 
 export const useProcessBottlenecks = (processId: string) => {
-  const { organizationClient } = useOrganization();
-  
   return useQuery({
     queryKey: ['process-bottlenecks', processId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('Organization client not available');
-      }
-      
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('process_bottlenecks')
         .select('*')
         .eq('process_id', processId)
@@ -81,21 +70,15 @@ export const useProcessBottlenecks = (processId: string) => {
 
       return data as ProcessBottleneck[];
     },
-    enabled: !!processId && !!organizationClient,
+    enabled: !!processId,
   });
 };
 
 export const useProcessInefficiencies = (processId: string) => {
-  const { organizationClient } = useOrganization();
-  
   return useQuery({
     queryKey: ['process-inefficiencies', processId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('Organization client not available');
-      }
-      
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('process_inefficiencies')
         .select('*')
         .eq('process_id', processId)
@@ -108,6 +91,6 @@ export const useProcessInefficiencies = (processId: string) => {
 
       return data as ProcessInefficiency[];
     },
-    enabled: !!processId && !!organizationClient,
+    enabled: !!processId,
   });
 };

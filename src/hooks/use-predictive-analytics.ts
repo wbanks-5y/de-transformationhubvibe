@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface PredictiveInsight {
   initiative_id: string;
@@ -14,17 +14,12 @@ export interface PredictiveInsight {
 }
 
 export const usePredictiveAnalytics = () => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['predictive-analytics'],
     queryFn: async (): Promise<PredictiveInsight[]> => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
       try {
         // Get initiatives with milestones and resources
-        const { data: initiatives, error: initiativesError } = await organizationClient
+        const { data: initiatives, error: initiativesError } = await supabase
           .from('strategic_initiatives')
           .select(`
             *,
@@ -131,6 +126,5 @@ export const usePredictiveAnalytics = () => {
         return [];
       }
     },
-    enabled: !!organizationClient,
   });
 };

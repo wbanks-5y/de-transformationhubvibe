@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Plus, Edit, Trash2, Eye, EyeOff, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -22,7 +22,6 @@ interface ProcessFormData {
 }
 
 const BusinessProcessesAdmin: React.FC<BusinessProcessesAdminProps> = ({ onManageProcess }) => {
-  const { organizationClient } = useOrganization();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedProcess, setSelectedProcess] = useState<any>(null);
@@ -35,11 +34,7 @@ const BusinessProcessesAdmin: React.FC<BusinessProcessesAdminProps> = ({ onManag
   const { data: processes = [], refetch, isLoading } = useQuery({
     queryKey: ['business-processes-admin'],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('business_processes')
         .select('*')
         .order('display_name', { ascending: true });
@@ -47,7 +42,6 @@ const BusinessProcessesAdmin: React.FC<BusinessProcessesAdminProps> = ({ onManag
       if (error) throw error;
       return data;
     },
-    enabled: !!organizationClient,
   });
 
   const resetForm = () => {
@@ -59,11 +53,6 @@ const BusinessProcessesAdmin: React.FC<BusinessProcessesAdminProps> = ({ onManag
   };
 
   const handleCreate = async () => {
-    if (!organizationClient) {
-      toast.error("No organization client available");
-      return;
-    }
-
     try {
       // Generate route_path from the name
       const route_path = `/${formData.name.toLowerCase().replace(/\s+/g, '-')}`;
@@ -73,7 +62,7 @@ const BusinessProcessesAdmin: React.FC<BusinessProcessesAdminProps> = ({ onManag
         route_path
       };
 
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('business_processes')
         .insert([processData]);
 
@@ -100,7 +89,7 @@ const BusinessProcessesAdmin: React.FC<BusinessProcessesAdminProps> = ({ onManag
   };
 
   const handleUpdate = async () => {
-    if (!selectedProcess || !organizationClient) return;
+    if (!selectedProcess) return;
 
     try {
       // Generate route_path from the name
@@ -111,7 +100,7 @@ const BusinessProcessesAdmin: React.FC<BusinessProcessesAdminProps> = ({ onManag
         route_path
       };
 
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('business_processes')
         .update(processData)
         .eq('id', selectedProcess.id);
@@ -130,10 +119,10 @@ const BusinessProcessesAdmin: React.FC<BusinessProcessesAdminProps> = ({ onManag
   };
 
   const handleDelete = async (process: any) => {
-    if (!confirm(`Are you sure you want to delete "${process.display_name}"?`) || !organizationClient) return;
+    if (!confirm(`Are you sure you want to delete "${process.display_name}"?`)) return;
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('business_processes')
         .delete()
         .eq('id', process.id);
@@ -149,10 +138,8 @@ const BusinessProcessesAdmin: React.FC<BusinessProcessesAdminProps> = ({ onManag
   };
 
   const toggleActive = async (process: any) => {
-    if (!organizationClient) return;
-
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('business_processes')
         .update({ is_active: !process.is_active })
         .eq('id', process.id);

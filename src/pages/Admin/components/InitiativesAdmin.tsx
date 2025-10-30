@@ -8,8 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { useStrategicObjectives } from "@/hooks/use-strategic-objectives";
-import { useOrganization } from "@/context/OrganizationContext";
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Edit, Trash2, Save, X, Calendar } from "lucide-react";
 import {
@@ -38,7 +38,6 @@ interface InitiativeFormData {
 }
 
 const InitiativesAdmin: React.FC = () => {
-  const { organizationClient, currentOrganization } = useOrganization();
   const { data: objectives = [] } = useStrategicObjectives();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -58,13 +57,9 @@ const InitiativesAdmin: React.FC = () => {
   });
 
   const { data: initiatives = [], refetch } = useQuery({
-    queryKey: ['strategic-initiatives', currentOrganization?.slug],
+    queryKey: ['strategic-initiatives'],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('Organization client not available');
-      }
-
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('strategic_initiatives')
         .select(`
           *,
@@ -105,11 +100,6 @@ const InitiativesAdmin: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!organizationClient) {
-      toast.error("Organization client not available");
-      return;
-    }
-
     try {
       const submitData = {
         ...formData,
@@ -119,7 +109,7 @@ const InitiativesAdmin: React.FC = () => {
       };
 
       if (editingId) {
-        const { error } = await organizationClient
+        const { error } = await supabase
           .from('strategic_initiatives')
           .update(submitData)
           .eq('id', editingId);
@@ -128,7 +118,7 @@ const InitiativesAdmin: React.FC = () => {
         toast.success("Initiative updated successfully");
         setEditingId(null);
       } else {
-        const { error } = await organizationClient
+        const { error } = await supabase
           .from('strategic_initiatives')
           .insert([submitData]);
         
@@ -154,11 +144,7 @@ const InitiativesAdmin: React.FC = () => {
       
       refetch();
     } catch (error: any) {
-      console.error('Error saving initiative:', error);
-      const errorMessage = error?.message || "Failed to save initiative";
-      const errorDetails = error?.details ? ` - ${error.details}` : '';
-      const errorHint = error?.hint ? ` (${error.hint})` : '';
-      toast.error(`${errorMessage}${errorDetails}${errorHint}`);
+      toast.error("Error saving initiative: " + error.message);
     }
   };
 
@@ -183,13 +169,8 @@ const InitiativesAdmin: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this initiative?")) return;
     
-    if (!organizationClient) {
-      toast.error("Organization client not available");
-      return;
-    }
-
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('strategic_initiatives')
         .update({ is_active: false })
         .eq('id', id);
@@ -198,11 +179,7 @@ const InitiativesAdmin: React.FC = () => {
       toast.success("Initiative deleted successfully");
       refetch();
     } catch (error: any) {
-      console.error('Error deleting initiative:', error);
-      const errorMessage = error?.message || "Failed to delete initiative";
-      const errorDetails = error?.details ? ` - ${error.details}` : '';
-      const errorHint = error?.hint ? ` (${error.hint})` : '';
-      toast.error(`${errorMessage}${errorDetails}${errorHint}`);
+      toast.error("Error deleting initiative: " + error.message);
     }
   };
 

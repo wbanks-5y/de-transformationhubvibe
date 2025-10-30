@@ -15,7 +15,7 @@ const AndroidMylesPage: React.FC = () => {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
 
-  console.log('AndroidMylesPage rendered with', messages.length, 'messages');
+  console.log('🤖 AndroidMylesPage rendered with', messages.length, 'messages');
 
   // Reset chat at the beginning of each session
   useEffect(() => {
@@ -28,7 +28,7 @@ const AndroidMylesPage: React.FC = () => {
       const newHeight = window.innerHeight;
       const heightDiff = viewportHeight - newHeight;
       
-      console.log('Viewport change:', { viewportHeight, newHeight, heightDiff });
+      console.log('🤖 Viewport change:', { viewportHeight, newHeight, heightDiff });
       
       if (heightDiff > 150) {
         // Keyboard likely opened
@@ -55,7 +55,7 @@ const AndroidMylesPage: React.FC = () => {
 
   const scrollToBottom = () => {
     if (messagesEndRef.current && messagesContainerRef.current) {
-      console.log('Scrolling to bottom');
+      console.log('🤖 Scrolling to bottom');
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
       }, 100);

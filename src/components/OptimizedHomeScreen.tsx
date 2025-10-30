@@ -32,7 +32,7 @@ const OptimizedHomeScreen = () => {
   const cockpitModules = useCockpitModules();
 
   const handleModuleClick = (link: string) => {
-    console.log("Navigation triggered:", { 
+    console.log("🚀 Navigation triggered:", { 
       destination: link,
       timestamp: new Date().toISOString(),
       currentPath: window.location.pathname,
@@ -41,7 +41,7 @@ const OptimizedHomeScreen = () => {
     navigate(link);
   };
 
-  console.log("OptimizedHomeScreen render:", {
+  console.log("🏠 OptimizedHomeScreen render:", {
     authLoading,
     hasUser: !!user,
     hasSession: !!session,
@@ -55,7 +55,7 @@ const OptimizedHomeScreen = () => {
 
   // Show auth loading first
   if (authLoading) {
-    console.log("OptimizedHomeScreen: Showing auth loading");
+    console.log("🏠 OptimizedHomeScreen: Showing auth loading");
     return (
       <div className="container mx-auto px-4 py-10">
         <LogoHeader />
@@ -71,7 +71,7 @@ const OptimizedHomeScreen = () => {
 
   // Handle session issues
   if (!user || !session) {
-    console.log("OptimizedHomeScreen: No user or session");
+    console.log("🏠 OptimizedHomeScreen: No user or session");
     return (
       <div className="container mx-auto px-4 py-10">
         <LogoHeader />
@@ -93,7 +93,7 @@ const OptimizedHomeScreen = () => {
   const ringData: RingData[] = cockpitAggregates?.map(aggregate => {
     const IconComponent = getIconByName(aggregate.icon);
     
-    console.log("Creating ring data for cockpit:", {
+    console.log("🎨 Creating ring data for cockpit:", {
       cockpitName: aggregate.cockpit_name,
       displayName: aggregate.display_name,
       aggregateColor: aggregate.color,
@@ -122,7 +122,7 @@ const OptimizedHomeScreen = () => {
     
     const IconComponent = getIconByName(aggregateData?.icon || 'Gauge');
     
-    console.log("Processing module colors:", {
+    console.log("🎨 Processing module colors:", {
       moduleId: module.id,
       modulePath: module.path,
       moduleColor: module.color,
@@ -166,7 +166,7 @@ const OptimizedHomeScreen = () => {
 
   // Error state
   if (aggregatesError && !cockpitAggregates) {
-    console.error("OptimizedHomeScreen: Aggregates error:", aggregatesError);
+    console.error("🏠 OptimizedHomeScreen: Aggregates error:", aggregatesError);
     return (
       <div className="container mx-auto px-4 py-10">
         <LogoHeader />
@@ -185,7 +185,7 @@ const OptimizedHomeScreen = () => {
     );
   }
 
-  console.log("OptimizedHomeScreen: Rendering main content with colors:", {
+  console.log("🏠 OptimizedHomeScreen: Rendering main content with colors:", {
     ringDataCount: ringData.length,
     modulesCount: allModulesForGrid.length,
     chartModulesCount: allModulesForChart.length,

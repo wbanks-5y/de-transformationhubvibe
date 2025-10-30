@@ -1,6 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 import { MetricTimeBasedData, MetricMultiValueData } from '@/types/metrics';
 
 export const useCockpitMetricData = (
@@ -10,14 +10,9 @@ export const useCockpitMetricData = (
   endDate?: string,
   limit?: number
 ) => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['cockpit-metric-data', metricId, metricType, startDate, endDate, limit],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
       if (!metricId || !metricType) {
         console.log('useCockpitMetricData: No metricId or metricType provided, returning empty array');
         return [];
@@ -35,7 +30,7 @@ export const useCockpitMetricData = (
         // First, get the time-based metric ID from the base metric ID
         console.log('useCockpitMetricData: Querying metric_time_based table for base_metric_id:', metricId);
         
-        const { data: timeBasedMetric, error: timeBasedError } = await organizationClient
+        const { data: timeBasedMetric, error: timeBasedError } = await supabase
           .from('metric_time_based')
           .select('id')
           .eq('base_metric_id', metricId)
@@ -54,7 +49,7 @@ export const useCockpitMetricData = (
         console.log('useCockpitMetricData: Found time-based metric with ID:', timeBasedMetric.id);
 
         // Now query time-based data using the time-based metric ID and date_value column for filtering
-        let query = organizationClient
+        let query = supabase
           .from('metric_time_based_data')
           .select('*')
           .eq('time_metric_id', timeBasedMetric.id)
@@ -90,7 +85,7 @@ export const useCockpitMetricData = (
         // First, get the multi-value metric ID from the base metric ID
         console.log('useCockpitMetricData: Querying metric_multi_value table for base_metric_id:', metricId);
         
-        const { data: multiValueMetric, error: multiValueError } = await organizationClient
+        const { data: multiValueMetric, error: multiValueError } = await supabase
           .from('metric_multi_value')
           .select('id')
           .eq('base_metric_id', metricId)
@@ -109,7 +104,7 @@ export const useCockpitMetricData = (
         console.log('useCockpitMetricData: Found multi-value metric with ID:', multiValueMetric.id);
 
         // Query multi-value data using the multi-value metric ID
-        let query = organizationClient
+        let query = supabase
           .from('metric_multi_value_data')
           .select('*')
           .eq('multi_value_metric_id', multiValueMetric.id)
@@ -139,13 +134,12 @@ export const useCockpitMetricData = (
       console.log('useCockpitMetricData: Single value metric, returning empty array');
       return [];
     },
-    enabled: !!metricId && !!metricType && !!organizationClient,
+    enabled: !!metricId && !!metricType,
   });
 };
 
 export const useBulkCreateMetricData = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async ({ 
@@ -157,9 +151,6 @@ export const useBulkCreateMetricData = () => {
       metricId: string;
       dataPoints: any[];
     }) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
       console.log('Bulk creating metric data points:', { metricType, metricId, dataPoints });
       
       let table = '';
@@ -179,7 +170,7 @@ export const useBulkCreateMetricData = () => {
         }));
       }
       
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from(table as any)
         .insert(processedDataPoints)
         .select();

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Plus, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -25,7 +25,6 @@ interface StatisticsFormData {
 }
 
 const ProcessStatisticsAdmin: React.FC<ProcessStatisticsAdminProps> = ({ selectedProcessId }) => {
-  const { organizationClient } = useOrganization();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedStatistic, setSelectedStatistic] = useState<any>(null);
@@ -42,12 +41,8 @@ const ProcessStatisticsAdmin: React.FC<ProcessStatisticsAdminProps> = ({ selecte
   const { data: statisticsData = [], refetch, isLoading } = useQuery({
     queryKey: ['process-statistics', selectedProcessId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-
       console.log('Fetching statistics for processId:', selectedProcessId);
-      let query = organizationClient
+      let query = supabase
         .from('process_statistics')
         .select(`
           *,
@@ -70,7 +65,6 @@ const ProcessStatisticsAdmin: React.FC<ProcessStatisticsAdminProps> = ({ selecte
       console.log('Statistics data received:', data);
       return data || [];
     },
-    enabled: !!organizationClient,
   });
 
   // Ensure statistics is always an array
@@ -95,13 +89,8 @@ const ProcessStatisticsAdmin: React.FC<ProcessStatisticsAdminProps> = ({ selecte
   };
 
   const handleCreate = async () => {
-    if (!organizationClient) {
-      toast.error("No organization client available");
-      return;
-    }
-
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_statistics')
         .insert([formData]);
 
@@ -130,10 +119,10 @@ const ProcessStatisticsAdmin: React.FC<ProcessStatisticsAdminProps> = ({ selecte
   };
 
   const handleUpdate = async () => {
-    if (!selectedStatistic || !organizationClient) return;
+    if (!selectedStatistic) return;
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_statistics')
         .update(formData)
         .eq('id', selectedStatistic.id);
@@ -152,10 +141,10 @@ const ProcessStatisticsAdmin: React.FC<ProcessStatisticsAdminProps> = ({ selecte
   };
 
   const handleDelete = async (statistic: any) => {
-    if (!confirm(`Are you sure you want to delete statistics for "${statistic.business_processes?.display_name}"?`) || !organizationClient) return;
+    if (!confirm(`Are you sure you want to delete statistics for "${statistic.business_processes?.display_name}"?`)) return;
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_statistics')
         .delete()
         .eq('id', statistic.id);

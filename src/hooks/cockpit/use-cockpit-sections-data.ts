@@ -1,21 +1,17 @@
 
-import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { CockpitSection } from '@/types/cockpit';
 import { MetricDisplay } from '@/types/metrics';
-import type { Database } from '@/integrations/supabase/types';
 import { useCockpitMetricsData } from './use-cockpit-metrics-data';
 
 export const useCockpitSectionsData = () => {
   const { transformMetricsData } = useCockpitMetricsData();
 
-  const fetchSectionsWithMetrics = async (
-    cockpitTypeId: string,
-    client: SupabaseClient<Database>
-  ) => {
+  const fetchSectionsWithMetrics = async (cockpitTypeId: string) => {
     console.log('Fetching sections for cockpit type:', cockpitTypeId);
 
     // Get sections for this cockpit type with better error handling
-    const { data: sections, error: sectionsError } = await client
+    const { data: sections, error: sectionsError } = await supabase
       .from('cockpit_sections')
       .select('*')
       .eq('cockpit_type_id', cockpitTypeId)
@@ -33,7 +29,7 @@ export const useCockpitSectionsData = () => {
     const sectionsWithMetrics = [];
     for (const section of sections || []) {
       try {
-        const metrics = await transformMetricsData(section.id, client);
+        const metrics = await transformMetricsData(section.id);
         console.log(`Metrics for section ${section.name}:`, metrics || []);
 
         sectionsWithMetrics.push({

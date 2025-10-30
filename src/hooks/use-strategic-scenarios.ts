@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useOrganization } from "@/context/OrganizationContext";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useStrategicScenarios = () => {
@@ -174,16 +173,10 @@ export const useStrategicScenarioImpactCategories = () => {
 
 // Strategic Initiatives hooks
 export const useStrategicInitiatives = () => {
-  const { organizationClient } = useOrganization();
-  
   return useQuery({
     queryKey: ["strategic-initiatives"],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('Organization client not available');
-      }
-      
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from("strategic_initiatives")
         .select("*")
         .eq("is_active", true)
@@ -192,22 +185,15 @@ export const useStrategicInitiatives = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!organizationClient,
   });
 };
 
 // Strategic Initiative Milestones hooks
 export const useStrategicInitiativeMilestones = () => {
-  const { organizationClient } = useOrganization();
-  
   return useQuery({
     queryKey: ["strategic-initiative-milestones"],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('Organization client not available');
-      }
-      
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from("strategic_initiative_milestones")
         .select(`
           *,
@@ -218,22 +204,15 @@ export const useStrategicInitiativeMilestones = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!organizationClient,
   });
 };
 
 // Strategic Resource Allocations hooks
 export const useStrategicResourceAllocations = () => {
-  const { organizationClient } = useOrganization();
-  
   return useQuery({
     queryKey: ["strategic-resource-allocations"],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('Organization client not available');
-      }
-      
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from("strategic_resource_allocations")
         .select(`
           *,
@@ -244,22 +223,15 @@ export const useStrategicResourceAllocations = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!organizationClient,
   });
 };
 
 // Strategic Initiative Dependencies hooks
 export const useStrategicInitiativeDependencies = () => {
-  const { organizationClient } = useOrganization();
-  
   return useQuery({
     queryKey: ["strategic-initiative-dependencies"],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('Organization client not available');
-      }
-      
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from("strategic_initiative_dependencies")
         .select(`
           *,
@@ -271,22 +243,15 @@ export const useStrategicInitiativeDependencies = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!organizationClient,
   });
 };
 
 // Strategic Milestone Dependencies hooks
 export const useStrategicMilestoneDependencies = () => {
-  const { organizationClient } = useOrganization();
-  
   return useQuery({
     queryKey: ["strategic-milestone-dependencies"],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('Organization client not available');
-      }
-      
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from("strategic_milestone_dependencies")
         .select(`
           *,
@@ -298,6 +263,5 @@ export const useStrategicMilestoneDependencies = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!organizationClient,
   });
 };

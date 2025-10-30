@@ -1,6 +1,7 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
-import { useOrganization } from './OrganizationContext';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -29,13 +30,12 @@ const UserPreferencesContext = createContext<UserPreferencesContextType | undefi
 
 export const UserPreferencesProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
-  const { organizationClient } = useOrganization();
   const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadPreferences = async () => {
-      if (!user || !organizationClient) {
+      if (!user) {
         // If not logged in, load from localStorage
         const savedPrefs = localStorage.getItem('userPreferences');
         if (savedPrefs) {
@@ -52,27 +52,23 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
 
       try {
         setIsLoading(true);
-        // Try to load from organization's Supabase
-        const { data, error } = await organizationClient
+        // Try to load from Supabase
+        const { data, error } = await supabase
           .from('user_preferences')
           .select('*')
           .eq('user_id', user.id)
-          .maybeSingle();
+          .single();
 
-        if (error) {
-          // Table might not exist in this org's database - use defaults
-          console.log('user_preferences table not available, using defaults');
+        if (error || !data) {
+          // If no preferences yet, use defaults
           setPreferences(defaultPreferences);
-        } else if (data) {
+        } else {
           // Parse the JSON preferences from Supabase
           const userPrefs = data.preferences as unknown;
           setPreferences((userPrefs as UserPreferences) || defaultPreferences);
-        } else {
-          // No preferences yet for this user
-          setPreferences(defaultPreferences);
         }
       } catch (error) {
-        console.log('Error loading preferences, using defaults:', error);
+        console.error('Error loading preferences:', error);
         // Fallback to defaults if there's an error
         setPreferences(defaultPreferences);
       } finally {
@@ -81,7 +77,7 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
     };
 
     loadPreferences();
-  }, [user, organizationClient]);
+  }, [user]);
 
   const updatePreference = async <K extends keyof UserPreferences>(
     key: K, 
@@ -95,9 +91,9 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
     localStorage.setItem('userPreferences', JSON.stringify(newPreferences));
 
     // If logged in, save to database
-    if (user && organizationClient) {
+    if (user) {
       try {
-        const { error } = await organizationClient
+        const { error } = await supabase
           .from('user_preferences')
           .upsert({ 
             user_id: user.id, 
@@ -107,7 +103,7 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
             onConflict: 'user_id' 
           });
 
-        if (error) console.error('Error saving preferences to organization database:', error);
+        if (error) console.error('Error saving preferences to Supabase:', error);
       } catch (error) {
         console.error('Error saving preferences:', error);
       }
@@ -118,9 +114,9 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
     setPreferences(defaultPreferences);
     localStorage.setItem('userPreferences', JSON.stringify(defaultPreferences));
 
-    if (user && organizationClient) {
+    if (user) {
       try {
-        const { error } = await organizationClient
+        const { error } = await supabase
           .from('user_preferences')
           .upsert({ 
             user_id: user.id, 
@@ -130,7 +126,7 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
             onConflict: 'user_id' 
           });
 
-        if (error) console.error('Error resetting preferences in organization database:', error);
+        if (error) console.error('Error resetting preferences in Supabase:', error);
       } catch (error) {
         console.error('Error resetting preferences:', error);
       }

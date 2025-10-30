@@ -1,13 +1,9 @@
 
-import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { CockpitType } from '@/types/cockpit';
-import type { Database } from '@/integrations/supabase/types';
 
 export const useCockpitTypeLookup = () => {
-  const findCockpitType = async (
-    cockpitIdOrName: string,
-    client: SupabaseClient<Database>
-  ): Promise<CockpitType | null> => {
+  const findCockpitType = async (cockpitIdOrName: string): Promise<CockpitType | null> => {
     console.log('Looking up cockpit type:', cockpitIdOrName);
     
     if (!cockpitIdOrName) {
@@ -19,7 +15,7 @@ export const useCockpitTypeLookup = () => {
       // Check if it's a UUID
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cockpitIdOrName);
       
-      let query = client
+      let query = supabase
         .from('cockpit_types')
         .select('*')
         .eq('is_active', true);
@@ -43,7 +39,7 @@ export const useCockpitTypeLookup = () => {
           const underscoreName = cockpitIdOrName.replace(/-/g, '_');
           console.log('Trying underscore version:', underscoreName);
           
-          query = client
+          query = supabase
             .from('cockpit_types')
             .select('*')
             .eq('is_active', true)
@@ -58,7 +54,7 @@ export const useCockpitTypeLookup = () => {
         if (!data && !error) {
           console.log('Trying route_path lookup for:', `/cockpit/${cockpitIdOrName}`);
           
-          query = client
+          query = supabase
             .from('cockpit_types')
             .select('*')
             .eq('is_active', true)

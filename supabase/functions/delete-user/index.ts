@@ -95,9 +95,8 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Delete user error:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: error.message || 'Internal server error' }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

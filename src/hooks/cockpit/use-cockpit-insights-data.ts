@@ -1,16 +1,12 @@
 
-import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { CockpitInsight } from '@/types/cockpit';
-import type { Database } from '@/integrations/supabase/types';
 
 export const useCockpitInsightsData = () => {
-  const fetchInsights = async (
-    cockpitTypeId: string,
-    client: SupabaseClient<Database>
-  ): Promise<CockpitInsight[]> => {
+  const fetchInsights = async (cockpitTypeId: string): Promise<CockpitInsight[]> => {
     console.log('Fetching insights for cockpit type:', cockpitTypeId);
 
-    const { data: insights, error: insightsError } = await client
+    const { data: insights, error: insightsError } = await supabase
       .from('cockpit_insights')
       .select('*')
       .eq('cockpit_type_id', cockpitTypeId)

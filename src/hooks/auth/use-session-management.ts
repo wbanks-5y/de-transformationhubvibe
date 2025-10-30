@@ -17,7 +17,6 @@ export const useSessionManagement = () => {
     if (!userId) return 'pending' as UserStatus;
     
     try {
-      // Note: Uses default client as this happens during auth, before org selection
       const { data, error } = await supabase
         .from('profiles')
         .select('status')

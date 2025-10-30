@@ -22,7 +22,7 @@ const HomeScreen = () => {
   const cockpitModules = useCockpitModules();
 
   const handleModuleClick = (link: string) => {
-    console.log("Navigation triggered:", { 
+    console.log("🚀 Navigation triggered:", { 
       destination: link,
       timestamp: new Date().toISOString(),
       currentPath: window.location.pathname,
@@ -31,7 +31,7 @@ const HomeScreen = () => {
     navigate(link);
   };
 
-  console.log("HomeScreen render:", {
+  console.log("🏠 HomeScreen render:", {
     authLoading,
     hasUser: !!user,
     hasSession: !!session,
@@ -44,7 +44,7 @@ const HomeScreen = () => {
 
   // Show auth loading first
   if (authLoading) {
-    console.log("HomeScreen: Showing auth loading");
+    console.log("🏠 HomeScreen: Showing auth loading");
     return (
       <div className="container mx-auto px-4 py-10">
         <LogoHeader />
@@ -60,7 +60,7 @@ const HomeScreen = () => {
 
   // Handle session issues
   if (!user || !session) {
-    console.log("HomeScreen: No user or session");
+    console.log("🏠 HomeScreen: No user or session");
     return (
       <div className="container mx-auto px-4 py-10">
         <LogoHeader />
@@ -82,7 +82,7 @@ const HomeScreen = () => {
   const ringData: RingData[] = cockpitAggregates?.map(aggregate => {
     const IconComponent = getIconByName(aggregate.icon);
     
-    console.log("Creating ring data for cockpit:", {
+    console.log("🎨 Creating ring data for cockpit:", {
       cockpitName: aggregate.cockpit_name,
       displayName: aggregate.display_name,
       aggregateColor: aggregate.color,
@@ -111,7 +111,7 @@ const HomeScreen = () => {
     
     const IconComponent = getIconByName(aggregateData?.icon || 'Gauge');
     
-    console.log("Processing module colors:", {
+    console.log("🎨 Processing module colors:", {
       moduleId: module.id,
       modulePath: module.path,
       moduleColor: module.color,
@@ -155,7 +155,7 @@ const HomeScreen = () => {
 
   // Loading state
   if (aggregatesLoading) {
-    console.log("HomeScreen: Showing aggregates loading");
+    console.log("🏠 HomeScreen: Showing aggregates loading");
     return (
       <div className="container mx-auto px-4 py-10">
         <LogoHeader />
@@ -171,7 +171,7 @@ const HomeScreen = () => {
 
   // Error state
   if (aggregatesError) {
-    console.error("HomeScreen: Aggregates error:", aggregatesError);
+    console.error("🏠 HomeScreen: Aggregates error:", aggregatesError);
     return (
       <div className="container mx-auto px-4 py-10">
         <LogoHeader />
@@ -190,7 +190,7 @@ const HomeScreen = () => {
     );
   }
 
-  console.log("HomeScreen: Rendering main content with colors:", {
+  console.log("🏠 HomeScreen: Rendering main content with colors:", {
     ringDataCount: ringData.length,
     modulesCount: allModulesForGrid.length,
     chartModulesCount: allModulesForChart.length

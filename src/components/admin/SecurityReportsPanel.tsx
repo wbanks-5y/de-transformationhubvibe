@@ -58,13 +58,9 @@ export const SecurityReportsPanel: React.FC = () => {
         start_date: start.toISOString(),
         end_date: end.toISOString()
       });
-      if (error) {
-        console.error('Error generating report:', error);
-        throw error;
-      }
+      if (error) throw error;
       return data as unknown as SecurityReport;
     },
-    retry: 1,
   });
 
   const downloadReport = async () => {
@@ -131,10 +127,13 @@ export const SecurityReportsPanel: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
             <p className="text-sm text-muted-foreground mb-4">
-              Unable to generate security report. The reporting system may not be set up yet.
+              Failed to load security report
             </p>
+            <Button onClick={() => refetch()} variant="outline">
+              Try Again
+            </Button>
           </div>
         </CardContent>
       </Card>

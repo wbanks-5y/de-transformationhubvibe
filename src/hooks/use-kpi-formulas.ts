@@ -1,6 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 // Define the formula type based on the actual database schema
@@ -19,15 +19,10 @@ export interface CockpitKPIFormula {
 }
 
 export const useKPIFormulas = () => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['kpi-formulas'],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('cockpit_kpi_formulas')
         .select('*')
         .eq('is_active', true)
@@ -36,20 +31,15 @@ export const useKPIFormulas = () => {
       if (error) throw error;
       return data as CockpitKPIFormula[];
     },
-    enabled: !!organizationClient,
   });
 };
 
 export const useCreateKPIFormula = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async (data: Omit<CockpitKPIFormula, 'id' | 'created_at' | 'updated_at'>) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { data: result, error } = await organizationClient
+      const { data: result, error } = await supabase
         .from('cockpit_kpi_formulas')
         .insert(data)
         .select()

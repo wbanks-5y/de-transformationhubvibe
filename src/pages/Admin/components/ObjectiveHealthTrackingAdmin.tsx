@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { useStrategicHealthPeriods } from "@/hooks/use-strategic-health-periods";
 import { useStrategicObjectives } from "@/hooks/use-strategic-objectives";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Edit, Trash2, Save, X, AlertCircle, TrendingUp } from "lucide-react";
 import {
@@ -32,7 +32,6 @@ interface HealthTrackingFormData {
 }
 
 const ObjectiveHealthTrackingAdmin: React.FC = () => {
-  const { organizationClient } = useOrganization();
   const { data: healthPeriods = [], refetch } = useStrategicHealthPeriods();
   const { data: objectives = [] } = useStrategicObjectives();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -63,14 +62,9 @@ const ObjectiveHealthTrackingAdmin: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!organizationClient) {
-      toast.error('Organization not available');
-      return;
-    }
-    
     try {
       if (editingId) {
-        const { error } = await organizationClient
+        const { error } = await supabase
           .from('strategic_objective_health_periods')
           .update(formData)
           .eq('id', editingId);
@@ -79,7 +73,7 @@ const ObjectiveHealthTrackingAdmin: React.FC = () => {
         toast.success("Health tracking updated successfully");
         setEditingId(null);
       } else {
-        const { error } = await organizationClient
+        const { error } = await supabase
           .from('strategic_objective_health_periods')
           .insert([formData]);
         
@@ -118,13 +112,8 @@ const ObjectiveHealthTrackingAdmin: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this health tracking record?")) return;
     
-    if (!organizationClient) {
-      toast.error('Organization not available');
-      return;
-    }
-    
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('strategic_objective_health_periods')
         .delete()
         .eq('id', id);

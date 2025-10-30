@@ -4,12 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle, Database, Settings, RefreshCw, ExternalLink, Info, Pencil } from "lucide-react";
+import { AlertCircle, CheckCircle, Database, Settings, RefreshCw, ExternalLink, Info } from "lucide-react";
 import { toast } from "sonner";
-
-// Import current Supabase configuration
-const CURRENT_SUPABASE_URL = "https://fgbilpzuniuqrpetnbgz.supabase.co";
-const CURRENT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnYmlscHp1bml1cXJwZXRuYmd6Iiwicm9sZSI6ImFub24iLCJp";
 
 interface DatabaseConfig {
   id: string;
@@ -29,36 +25,19 @@ const DatabaseConfiguration: React.FC = () => {
     anonKey: ''
   });
   const [testing, setTesting] = useState<string | null>(null);
-  const [editingConfig, setEditingConfig] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', url: '', anonKey: '' });
 
   // Load existing configurations from localStorage
   useEffect(() => {
     const savedConfigs = localStorage.getItem('supabase-configs');
     if (savedConfigs) {
-      const parsedConfigs = JSON.parse(savedConfigs);
-      
-      // Migration: Check if "Current Database" exists and needs updating
-      const currentDbConfig = parsedConfigs.find(c => c.id === 'current');
-      if (currentDbConfig && (!currentDbConfig.url || !currentDbConfig.anonKey)) {
-        // Update with real credentials
-        const updatedConfigs = parsedConfigs.map(c => 
-          c.id === 'current' 
-            ? { ...c, url: CURRENT_SUPABASE_URL, anonKey: CURRENT_SUPABASE_KEY }
-            : c
-        );
-        localStorage.setItem('supabase-configs', JSON.stringify(updatedConfigs));
-        setConfigs(updatedConfigs);
-      } else {
-        setConfigs(parsedConfigs);
-      }
+      setConfigs(JSON.parse(savedConfigs));
     } else {
-      // Add current configuration as default with real credentials
+      // Add current configuration as default
       const currentConfig: DatabaseConfig = {
         id: 'current',
         name: 'Current Database',
-        url: CURRENT_SUPABASE_URL,
-        anonKey: CURRENT_SUPABASE_KEY,
+        url: 'https://jyuxaifsevdwbjwldgbw.supabase.co',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5dXhhaWZzZXZkd2Jqd2xkZ2J3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY2ODk5MDQsImV4cCI6MjA2MjI2NTkwNH0.TfkVlPwyiGtmCQrue0v0RItOa_tcadnBDMNzOg10NaI',
         isActive: true,
         status: 'connected'
       };
@@ -73,14 +52,6 @@ const DatabaseConfiguration: React.FC = () => {
   };
 
   const testConnection = async (config: DatabaseConfig) => {
-    // Validate credentials exist
-    if (!config.url || !config.anonKey) {
-      toast.error('Configuration is incomplete', {
-        description: 'Please add URL and anon key before testing'
-      });
-      return;
-    }
-
     setTesting(config.id);
     
     try {
@@ -195,37 +166,6 @@ const DatabaseConfiguration: React.FC = () => {
     toast.success('Configuration removed');
   };
 
-  const startEditing = (config: DatabaseConfig) => {
-    setEditingConfig(config.id);
-    setEditForm({
-      name: config.name,
-      url: config.url,
-      anonKey: config.anonKey
-    });
-  };
-
-  const saveEdit = (configId: string) => {
-    if (!editForm.name || !editForm.url || !editForm.anonKey) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-
-    const updatedConfigs = configs.map(c => 
-      c.id === configId 
-        ? { ...c, name: editForm.name, url: editForm.url, anonKey: editForm.anonKey, status: 'disconnected' as const }
-        : c
-    );
-    
-    saveConfigs(updatedConfigs);
-    setEditingConfig(null);
-    toast.success('Configuration updated. Please test the connection.');
-  };
-
-  const cancelEdit = () => {
-    setEditingConfig(null);
-    setEditForm({ name: '', url: '', anonKey: '' });
-  };
-
   const getCurrentConfig = () => configs.find(c => c.isActive);
   const currentConfig = getCurrentConfig();
 
@@ -305,104 +245,49 @@ const DatabaseConfiguration: React.FC = () => {
         <CardContent>
           <div className="space-y-4">
             {configs.map((config) => (
-              <div key={config.id} className="p-4 border rounded-lg">
-                {editingConfig === config.id ? (
-                  // Edit Form
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor={`edit-name-${config.id}`}>Configuration Name</Label>
-                      <Input
-                        id={`edit-name-${config.id}`}
-                        value={editForm.name}
-                        onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor={`edit-url-${config.id}`}>Supabase Project URL</Label>
-                      <Input
-                        id={`edit-url-${config.id}`}
-                        value={editForm.url}
-                        onChange={(e) => setEditForm({...editForm, url: e.target.value})}
-                        placeholder="https://your-project.supabase.co"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor={`edit-key-${config.id}`}>Anonymous Key</Label>
-                      <Input
-                        id={`edit-key-${config.id}`}
-                        type="password"
-                        value={editForm.anonKey}
-                        onChange={(e) => setEditForm({...editForm, anonKey: e.target.value})}
-                        placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button onClick={() => saveEdit(config.id)}>Save Changes</Button>
-                      <Button variant="outline" onClick={cancelEdit}>Cancel</Button>
-                    </div>
+              <div key={config.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-medium">{config.name}</h4>
+                    {config.isActive && <Badge variant="default">Active</Badge>}
                   </div>
-                ) : (
-                  // Display View
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium">{config.name}</h4>
-                        {config.isActive && <Badge variant="default">Active</Badge>}
-                        {(!config.url || !config.anonKey) && (
-                          <Badge variant="outline" className="text-yellow-600 border-yellow-400">
-                            Incomplete
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {config.url || <span className="text-yellow-600">Missing URL</span>}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={config.status === 'connected' ? 'default' : 'destructive'}>
-                        {config.status}
-                      </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => testConnection(config)}
-                        disabled={testing === config.id || !config.url || !config.anonKey}
-                      >
-                        {testing === config.id ? (
-                          <RefreshCw className="h-4 w-4 animate-spin" />
-                        ) : (
-                          'Test'
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => startEditing(config)}
-                      >
-                        <Pencil className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                      {!config.isActive && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => switchDatabase(config)}
-                        >
-                          Switch
-                        </Button>
-                      )}
-                      {!config.isActive && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => removeConfig(config.id)}
-                        >
-                          Remove
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                )}
+                  <p className="text-sm text-gray-500 mt-1">{config.url}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={config.status === 'connected' ? 'default' : 'destructive'}>
+                    {config.status}
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => testConnection(config)}
+                    disabled={testing === config.id}
+                  >
+                    {testing === config.id ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      'Test'
+                    )}
+                  </Button>
+                  {!config.isActive && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => switchDatabase(config)}
+                    >
+                      Switch
+                    </Button>
+                  )}
+                  {!config.isActive && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removeConfig(config.id)}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

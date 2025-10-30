@@ -40,13 +40,7 @@ export const RingChart = ({
     
     return data.map((item, index) => {
       // Calculate the ring spacing to fit all rings
-      const ringRadius = Math.max(0, radius - (index * (adjustedStrokeWidth + ringGap)));
-      
-      // Skip rings that are too small to render properly
-      if (ringRadius < adjustedStrokeWidth / 2) {
-        return null;
-      }
-      
+      const ringRadius = radius - (index * (adjustedStrokeWidth + ringGap));
       const ringCircumference = 2 * Math.PI * ringRadius;
       
       return {
@@ -56,7 +50,7 @@ export const RingChart = ({
         dashOffset: ringCircumference - (item.value / 100) * ringCircumference,
         strokeWidth: adjustedStrokeWidth
       };
-    }).filter(Boolean);
+    });
   }, [data, size, strokeWidth, gap]);
 
   // Calculate center for placing icons

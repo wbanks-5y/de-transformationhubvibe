@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface ProcessOptimizationMetrics {
   id: string;
@@ -24,15 +24,10 @@ export interface ProcessRecommendation {
 }
 
 export const useProcessOptimizationMetrics = (processId: string) => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['process-optimization-metrics', processId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('process_optimization_metrics')
         .select('*')
         .eq('process_id', processId)
@@ -44,20 +39,15 @@ export const useProcessOptimizationMetrics = (processId: string) => {
 
       return data as ProcessOptimizationMetrics;
     },
-    enabled: !!processId && !!organizationClient,
+    enabled: !!processId,
   });
 };
 
 export const useProcessRecommendations = (processId: string) => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['process-recommendations', processId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('process_recommendations')
         .select('*')
         .eq('process_id', processId)
@@ -70,6 +60,6 @@ export const useProcessRecommendations = (processId: string) => {
 
       return data as ProcessRecommendation[];
     },
-    enabled: !!processId && !!organizationClient,
+    enabled: !!processId,
   });
 };

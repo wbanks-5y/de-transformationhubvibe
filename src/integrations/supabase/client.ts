@@ -2,11 +2,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// This file is kept for backwards compatibility but is no longer the primary client
-// Use managementClient from @/lib/supabase/management-client for management database
-// Use organizationClient from OrganizationContext for customer databases
-const SUPABASE_URL = "https://fgbilpzuniuqrpetnbgz.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnYmlscHp1bml1cXJwZXRuYmd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4MDQ5NzMsImV4cCI6MjA3NDM4MDk3M30.XCQI7K3dohvX8QHyQ5dFrSggouyIPMdgq-orGVlaqPU";
+const SUPABASE_URL = "https://gvrxydwedhppmvppqwwm.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2cnh5ZHdlZGhwcG12cHBxd3dtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1MDk2MjQsImV4cCI6MjA3NDA4NTYyNH0.PmyU_j94vVwvumJS8GfIHxKPe5ntLUpyqJXzkBEFO_o";
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";

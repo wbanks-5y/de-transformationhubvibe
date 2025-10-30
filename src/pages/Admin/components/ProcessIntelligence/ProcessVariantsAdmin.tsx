@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Plus, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -28,7 +28,6 @@ interface VariantFormData {
 }
 
 const ProcessVariantsAdmin: React.FC<ProcessVariantsAdminProps> = ({ selectedProcessId }) => {
-  const { organizationClient } = useOrganization();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
@@ -45,11 +44,7 @@ const ProcessVariantsAdmin: React.FC<ProcessVariantsAdminProps> = ({ selectedPro
   const { data: variants = [], refetch, isLoading } = useQuery({
     queryKey: ['process-variants', selectedProcessId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-
-      let query = organizationClient
+      let query = supabase
         .from('process_variants')
         .select(`
           *,
@@ -67,7 +62,6 @@ const ProcessVariantsAdmin: React.FC<ProcessVariantsAdminProps> = ({ selectedPro
       if (error) throw error;
       return data;
     },
-    enabled: !!organizationClient,
   });
 
   // Update formData when selectedProcessId changes
@@ -88,13 +82,8 @@ const ProcessVariantsAdmin: React.FC<ProcessVariantsAdminProps> = ({ selectedPro
   };
 
   const handleCreate = async () => {
-    if (!organizationClient) {
-      toast.error("No organization client available");
-      return;
-    }
-
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_variants')
         .insert([formData]);
 
@@ -123,10 +112,10 @@ const ProcessVariantsAdmin: React.FC<ProcessVariantsAdminProps> = ({ selectedPro
   };
 
   const handleUpdate = async () => {
-    if (!selectedVariant || !organizationClient) return;
+    if (!selectedVariant) return;
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_variants')
         .update(formData)
         .eq('id', selectedVariant.id);
@@ -145,10 +134,10 @@ const ProcessVariantsAdmin: React.FC<ProcessVariantsAdminProps> = ({ selectedPro
   };
 
   const handleDelete = async (variant: any) => {
-    if (!confirm(`Are you sure you want to delete "${variant.name}"?`) || !organizationClient) return;
+    if (!confirm(`Are you sure you want to delete "${variant.name}"?`)) return;
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_variants')
         .delete()
         .eq('id', variant.id);
@@ -164,10 +153,8 @@ const ProcessVariantsAdmin: React.FC<ProcessVariantsAdminProps> = ({ selectedPro
   };
 
   const toggleActive = async (variant: any) => {
-    if (!organizationClient) return;
-
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_variants')
         .update({ is_active: !variant.is_active })
         .eq('id', variant.id);

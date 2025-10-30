@@ -1,16 +1,11 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useMetricDetails = (metricId: string | null) => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['metric-details', metricId],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
       if (!metricId) {
         throw new Error('No metric ID provided');
       }
@@ -18,7 +13,7 @@ export const useMetricDetails = (metricId: string | null) => {
       console.log('useMetricDetails: Fetching details for metric ID:', metricId);
 
       // First get the base metric data
-      const { data: baseMetric, error: baseError } = await organizationClient
+      const { data: baseMetric, error: baseError } = await supabase
         .from('metric_base')
         .select('*')
         .eq('id', metricId)
@@ -35,7 +30,7 @@ export const useMetricDetails = (metricId: string | null) => {
       let dataPoints: any[] = [];
 
       // Check single value
-      const { data: singleValue } = await organizationClient
+      const { data: singleValue } = await supabase
         .from('metric_single_value')
         .select('*')
         .eq('base_metric_id', metricId)
@@ -48,7 +43,7 @@ export const useMetricDetails = (metricId: string | null) => {
 
       // Check multi value
       if (!metricType) {
-        const { data: multiValue } = await organizationClient
+        const { data: multiValue } = await supabase
           .from('metric_multi_value')
           .select('*')
           .eq('base_metric_id', metricId)
@@ -59,7 +54,7 @@ export const useMetricDetails = (metricId: string | null) => {
           typeSpecificData = multiValue;
 
           // Get data points
-          const { data: multiValueData } = await organizationClient
+          const { data: multiValueData } = await supabase
             .from('metric_multi_value_data')
             .select('*')
             .eq('multi_value_metric_id', multiValue.id)
@@ -71,7 +66,7 @@ export const useMetricDetails = (metricId: string | null) => {
 
       // Check time based
       if (!metricType) {
-        const { data: timeBased } = await organizationClient
+        const { data: timeBased } = await supabase
           .from('metric_time_based')
           .select('*')
           .eq('base_metric_id', metricId)
@@ -82,7 +77,7 @@ export const useMetricDetails = (metricId: string | null) => {
           typeSpecificData = timeBased;
 
           // Get data points
-          const { data: timeBasedData } = await organizationClient
+          const { data: timeBasedData } = await supabase
             .from('metric_time_based_data')
             .select('*')
             .eq('time_metric_id', timeBased.id)
@@ -102,6 +97,6 @@ export const useMetricDetails = (metricId: string | null) => {
       console.log('useMetricDetails: Fetched metric details:', result);
       return result;
     },
-    enabled: !!metricId && !!organizationClient
+    enabled: !!metricId
   });
 };

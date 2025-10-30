@@ -1,19 +1,15 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export const useDeleteCockpitInsight = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async (id: string) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
       console.log('Deleting insight:', id);
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('cockpit_insights')
         .delete()
         .eq('id', id);

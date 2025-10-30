@@ -60,14 +60,14 @@ export default function ForgotPassword() {
       const timeSinceLastReset = Date.now() - lastResetTime;
       const info = `Last reset: ${new Date(lastResetTime).toLocaleString()}, Time since: ${Math.floor(timeSinceLastReset / 1000)}s, Can request: ${canRequestReset}`;
       setDebugInfo(info);
-      console.log('Debug info:', info);
+      console.log('🔍 Debug info:', info);
     }
   }, [lastResetTime, canRequestReset]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Form submitted:', {
+    console.log('🚀 Form submitted:', {
       email,
       canRequestReset,
       countdown,
@@ -82,7 +82,7 @@ export default function ForgotPassword() {
     if (!canRequestReset) {
       const errorMsg = `Please wait ${countdown} seconds before requesting another password reset.`;
       setError(errorMsg);
-      console.log('Client-side block:', errorMsg);
+      console.log('❌ Client-side block:', errorMsg);
       return;
     }
 
@@ -90,13 +90,13 @@ export default function ForgotPassword() {
     setError('');
     
     try {
-      console.log('Attempting to send reset email to:', email);
+      console.log('📧 Attempting to send reset email to:', email);
       await resetPassword(email);
-      console.log('Reset email sent successfully');
+      console.log('✅ Reset email sent successfully');
       setIsSubmitted(true);
       toast.success('Password reset email sent!');
     } catch (error: any) {
-      console.error('Password reset request failed:', {
+      console.error('❌ Password reset request failed:', {
         error: error?.message,
         type: typeof error,
         stack: error?.stack

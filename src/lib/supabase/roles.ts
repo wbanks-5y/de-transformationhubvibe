@@ -1,31 +1,25 @@
+
 import { supabase } from './client';
-import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Role management functions with enhanced security
 export type Role = 'admin' | 'manager' | 'user';
 
 // Function to get all available roles (admin only)
-export const getRoles = async (client?: SupabaseClient) => {
-  const db = client || supabase;
+export const getRoles = async () => {
   try {
     // Verify admin access using secure function
-    const { data: isAdmin, error: adminError } = await db.rpc('is_admin_secure');
+    const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin_secure');
     
     if (adminError || !isAdmin) {
-      try {
-        await db.rpc('log_security_event', {
-          p_action: 'unauthorized_role_access',
-          p_resource_type: 'roles',
-          p_success: false
-        });
-      } catch (logError) {
-        // Security logging is optional - continue even if it fails
-        console.warn('Security logging not available:', logError);
-      }
+      await supabase.rpc('log_security_event', {
+        p_action: 'unauthorized_role_access',
+        p_resource_type: 'roles',
+        p_success: false
+      });
       throw new Error('Unauthorized access to roles');
     }
 
-    const { data: roles, error } = await db
+    const { data: roles, error } = await supabase
       .from('roles')
       .select('*') as { data: any[], error: any };
       
@@ -34,16 +28,11 @@ export const getRoles = async (client?: SupabaseClient) => {
       return [];
     }
 
-    try {
-      await db.rpc('log_security_event', {
-        p_action: 'roles_accessed',
-        p_resource_type: 'roles',
-        p_success: true
-      });
-    } catch (logError) {
-      // Security logging is optional - continue even if it fails
-      console.warn('Security logging not available:', logError);
-    }
+    await supabase.rpc('log_security_event', {
+      p_action: 'roles_accessed',
+      p_resource_type: 'roles',
+      p_success: true
+    });
     
     return roles || [];
   } catch (error) {
@@ -53,27 +42,22 @@ export const getRoles = async (client?: SupabaseClient) => {
 };
 
 // Function to get users with their roles (admin only)
-export const getUsersWithRoles = async (client?: SupabaseClient) => {
-  const db = client || supabase;
+export const getUsersWithRoles = async () => {
   try {
     // Verify admin access
-    const { data: isAdmin, error: adminError } = await db.rpc('is_admin_secure');
+    const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin_secure');
     
     if (adminError || !isAdmin) {
-      try {
-        await db.rpc('log_security_event', {
-          p_action: 'unauthorized_users_access',
-          p_resource_type: 'users',
-          p_success: false
-        });
-      } catch (logError) {
-        console.warn('Security logging not available:', logError);
-      }
+      await supabase.rpc('log_security_event', {
+        p_action: 'unauthorized_users_access',
+        p_resource_type: 'users',
+        p_success: false
+      });
       throw new Error('Unauthorized access to user data');
     }
 
     // Get all user profiles
-    const { data: profiles, error: profilesError } = await db
+    const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
       .select('*') as { data: any[], error: any };
       
@@ -83,7 +67,7 @@ export const getUsersWithRoles = async (client?: SupabaseClient) => {
     }
 
     // Get all user_roles
-    const { data: userRoles, error: userRolesError } = await db
+    const { data: userRoles, error: userRolesError } = await supabase
       .from('user_roles')
       .select('*') as { data: any[], error: any };
       
@@ -93,7 +77,7 @@ export const getUsersWithRoles = async (client?: SupabaseClient) => {
     }
 
     // Get all roles
-    const { data: roles, error: rolesError } = await db
+    const { data: roles, error: rolesError } = await supabase
       .from('roles')
       .select('*') as { data: any[], error: any };
       
@@ -114,15 +98,11 @@ export const getUsersWithRoles = async (client?: SupabaseClient) => {
       };
     });
 
-    try {
-      await db.rpc('log_security_event', {
-        p_action: 'users_with_roles_accessed',
-        p_resource_type: 'users',
-        p_success: true
-      });
-    } catch (logError) {
-      console.warn('Security logging not available:', logError);
-    }
+    await supabase.rpc('log_security_event', {
+      p_action: 'users_with_roles_accessed',
+      p_resource_type: 'users',
+      p_success: true
+    });
 
     return usersWithRoles;
   } catch (error) {
@@ -132,67 +112,52 @@ export const getUsersWithRoles = async (client?: SupabaseClient) => {
 };
 
 // Function to assign a role to a user
-export const assignRoleToUser = async (userId: string, roleId: string, client?: SupabaseClient) => {
-  const db = client || supabase;
-  
-  // First check if user already has this role
-  const { data: existing, error: checkError } = await db
-    .from('user_roles')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('role_id', roleId)
-    .maybeSingle();
+export const assignRoleToUser = async (userId: string, roleId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .insert({
+        user_id: userId,
+        role_id: roleId
+      }) as { data: any, error: any };
+      
+    if (error) {
+      console.error("Error assigning role:", error);
+      return null;
+    }
     
-  if (checkError) {
-    console.error("Error checking existing role:", checkError);
-    throw new Error("Failed to check existing role assignment");
+    return data;
+  } catch (error) {
+    console.error("Error in assignRoleToUser:", error);
+    return null;
   }
-  
-  // If role already assigned, return a specific indicator
-  if (existing) {
-    return { isDuplicate: true };
-  }
-  
-  // Proceed with insertion
-  const { data, error } = await db
-    .from('user_roles')
-    .insert({
-      user_id: userId,
-      role_id: roleId
-    })
-    .select() as { data: any, error: any };
-    
-  if (error) {
-    console.error("Error assigning role:", error);
-    throw new Error(error.message || "Failed to assign role");
-  }
-  
-  return { isDuplicate: false, data };
 };
 
 // Function to remove a role from a user
-export const removeRoleFromUser = async (userId: string, roleId: string, client?: SupabaseClient) => {
-  const db = client || supabase;
-  
-  const { error } = await db
-    .from('user_roles')
-    .delete()
-    .eq('user_id', userId)
-    .eq('role_id', roleId) as { error: any };
+export const removeRoleFromUser = async (userId: string, roleId: string) => {
+  try {
+    const { error } = await supabase
+      .from('user_roles')
+      .delete()
+      .eq('user_id', userId)
+      .eq('role_id', roleId) as { error: any };
+      
+    if (error) {
+      console.error("Error removing role:", error);
+      return false;
+    }
     
-  if (error) {
-    console.error("Error removing role:", error);
-    throw new Error(error.message || "Failed to remove role");
+    return true;
+  } catch (error) {
+    console.error("Error in removeRoleFromUser:", error);
+    return false;
   }
-  
-  return true;
 };
 
 // Function to create a new role
-export const createRole = async (name: string, description: string, client?: SupabaseClient) => {
-  const db = client || supabase;
+export const createRole = async (name: string, description: string) => {
   try {
-    const { data, error } = await db
+    const { data, error } = await supabase
       .from('roles')
       .insert({
         name,
@@ -213,10 +178,9 @@ export const createRole = async (name: string, description: string, client?: Sup
 };
 
 // Function to update a role
-export const updateRole = async (id: string, name: string, description: string, client?: SupabaseClient) => {
-  const db = client || supabase;
+export const updateRole = async (id: string, name: string, description: string) => {
   try {
-    const { data, error } = await db
+    const { data, error } = await supabase
       .from('roles')
       .update({
         name,
@@ -238,10 +202,9 @@ export const updateRole = async (id: string, name: string, description: string, 
 };
 
 // Function to delete a role
-export const deleteRole = async (id: string, client?: SupabaseClient) => {
-  const db = client || supabase;
+export const deleteRole = async (id: string) => {
   try {
-    const { error } = await db
+    const { error } = await supabase
       .from('roles')
       .delete()
       .eq('id', id) as { error: any };

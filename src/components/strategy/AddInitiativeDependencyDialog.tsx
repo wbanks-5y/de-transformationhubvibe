@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { useStrategicInitiatives } from "@/hooks/use-strategic-scenarios";
 
 interface AddInitiativeDependencyDialogProps {
@@ -19,7 +19,6 @@ const AddInitiativeDependencyDialog: React.FC<AddInitiativeDependencyDialogProps
   const [dependsOnInitiativeId, setDependsOnInitiativeId] = useState<string>('');
   const [dependencyType, setDependencyType] = useState<string>('finish_to_start');
   
-  const { organizationClient } = useOrganization();
   const queryClient = useQueryClient();
   const { data: initiatives = [] } = useStrategicInitiatives();
 
@@ -29,9 +28,7 @@ const AddInitiativeDependencyDialog: React.FC<AddInitiativeDependencyDialogProps
       depends_on_initiative_id: string;
       dependency_type: string;
     }) => {
-      if (!organizationClient) throw new Error('Organization client not available');
-      
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('strategic_initiative_dependencies')
         .insert([data]);
 

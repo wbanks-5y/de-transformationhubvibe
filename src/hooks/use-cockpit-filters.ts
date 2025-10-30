@@ -1,6 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface CockpitFilter {
   id: string;
@@ -21,21 +21,16 @@ export interface CockpitFilter {
 }
 
 export const useCockpitFilters = (cockpitTypeId?: string, filterType?: string) => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['cockpit-filters', cockpitTypeId, filterType],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
       console.log('Fetching cockpit filters for:', cockpitTypeId, filterType);
       
       if (!cockpitTypeId) {
         return [];
       }
       
-      let query = organizationClient
+      let query = supabase
         .from('cockpit_filters')
         .select('*')
         .eq('cockpit_type_id', cockpitTypeId)
@@ -63,7 +58,7 @@ export const useCockpitFilters = (cockpitTypeId?: string, filterType?: string) =
       
       return transformedData as CockpitFilter[];
     },
-    enabled: !!cockpitTypeId && !!organizationClient,
+    enabled: !!cockpitTypeId,
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false,
   });

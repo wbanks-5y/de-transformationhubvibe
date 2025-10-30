@@ -8,12 +8,13 @@ import StrategyExecutionHeatmap from '@/components/strategy/StrategyExecutionHea
 import InitiativeTracker from '@/components/strategy/InitiativeTracker';
 import BusinessScenarioPlanning from '@/components/strategy/BusinessScenarioPlanning';
 import RiskAssessmentMatrix from '@/components/strategy/RiskAssessmentMatrix';
-import PerformanceTrends from '@/components/strategy/PerformanceTrends';
+import DevelopmentWatermark from '@/components/strategy/DevelopmentWatermark';
 
 // Wrapper component for consistent layout spacing
 const BusinessHealthLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl relative">
+      <DevelopmentWatermark />
       {children}
     </div>
   );
@@ -78,16 +79,6 @@ const StrategyRoutes: React.FC = () => {
           <ProtectedRoute>
             <BusinessHealthLayout>
               <RiskAssessmentMatrix />
-            </BusinessHealthLayout>
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/trends" 
-        element={
-          <ProtectedRoute>
-            <BusinessHealthLayout>
-              <PerformanceTrends />
             </BusinessHealthLayout>
           </ProtectedRoute>
         } 

@@ -2,23 +2,19 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { useOrganization } from "@/context/OrganizationContext";
 import ApprovalProtectedRoute from "@/components/auth/ApprovalProtectedRoute";
 import TierProtectedRoute from "@/components/auth/TierProtectedRoute";
 import AppLayout from "@/components/layout/AppLayout";
 
 // Auth Pages
-import OrganizationLogin from "@/pages/Auth/OrganizationLogin";
+import Login from "@/pages/Auth/Login";
 import Register from "@/pages/Auth/Register";
 import ForgotPassword from "@/pages/Auth/ForgotPassword";
 import ResetPassword from "@/pages/Auth/ResetPassword";
-import SetPassword from "@/pages/Auth/SetPassword";
-import VerifyInvitation from "@/pages/Auth/VerifyInvitation";
 
 // Main Pages
 import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
-import OptimizedHomeScreen from "@/components/OptimizedHomeScreen";
 import MylesPage from "@/pages/MylesPage";
 import ProcessIntelligencePage from "@/pages/ProcessIntelligencePage";
 import UserProfile from "@/pages/Profile/UserProfile";
@@ -39,7 +35,6 @@ import AdminRoutes from "./route-groups/AdminRoutes";
 
 const AppRoutes = () => {
   const { user, loading } = useAuth();
-  const { currentOrganization } = useOrganization();
 
   if (loading) {
     return <div>Loading...</div>;
@@ -47,18 +42,11 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      {/* Email Lookup - Public Route */}
-      <Route path="/" element={!user ? <Index /> : <Navigate to="/home" replace />} />
-      
-      {/* Organization-Specific Login */}
-      <Route path="/auth/:organizationSlug" element={!user ? <OrganizationLogin /> : <Navigate to="/home" replace />} />
-      
-      {/* Other Auth Routes */}
-      <Route path="/register" element={!user ? <Register /> : <Navigate to="/home" replace />} />
-      <Route path="/forgot-password" element={!user ? <ForgotPassword /> : <Navigate to="/home" replace />} />
+      {/* Public Routes */}
+      <Route path="/login" element={!user ? <Login /> : <Navigate to="/" replace />} />
+      <Route path="/register" element={!user ? <Register /> : <Navigate to="/" replace />} />
+      <Route path="/forgot-password" element={!user ? <ForgotPassword /> : <Navigate to="/" replace />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/verify-invitation" element={<VerifyInvitation />} />
-      <Route path="/set-password" element={<SetPassword />} />
 
       {/* Protected Routes with Approval Check */}
       <Route
@@ -67,7 +55,7 @@ const AppRoutes = () => {
           <ApprovalProtectedRoute>
             <AppLayout>
               <Routes>
-                <Route path="/home" element={<OptimizedHomeScreen />} />
+                <Route path="/" element={<Index />} />
                 
                 {/* User Guide - Available to all authenticated users */}
                 <Route path="/guide" element={<UserGuide />} />

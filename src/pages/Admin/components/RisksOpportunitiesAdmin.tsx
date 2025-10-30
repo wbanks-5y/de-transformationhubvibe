@@ -7,10 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { useStrategicObjectives, useStrategicRisksOpportunities } from "@/hooks/use-strategic-objectives";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { normalizeStatus, normalizeImpactLevel, normalizeProbability } from "@/lib/normalizers/risks";
-import { z } from "zod";
 import { Plus, Edit, Trash2, Save, X, AlertTriangle, TrendingUp } from "lucide-react";
 import {
   Dialog,
@@ -35,25 +33,7 @@ interface RiskOpportunityFormData {
   review_date: string;
 }
 
-const riskOpportunitySchema = z.object({
-  objective_id: z.string().optional(),
-  title: z.string().trim().min(1, "Title is required").max(200, "Title too long"),
-  description: z.string().trim().min(1, "Description is required"),
-  type: z.enum(['risk', 'opportunity']),
-  impact_level: z.enum(['low', 'medium', 'high', 'critical'], {
-    required_error: "Impact level is required"
-  }),
-  probability: z.enum(['low', 'medium', 'high'], {
-    required_error: "Probability is required"
-  }),
-  status: z.enum(['identified', 'assessed', 'mitigated', 'closed']),
-  owner: z.string().trim().max(100, "Owner name too long"),
-  mitigation_actions: z.string().trim(),
-  review_date: z.string()
-});
-
 const RisksOpportunitiesAdmin: React.FC = () => {
-  const { organizationClient, currentOrganization } = useOrganization();
   const { data: objectives = [] } = useStrategicObjectives();
   const { data: risksOpportunities = [], refetch } = useStrategicRisksOpportunities();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -79,8 +59,7 @@ const RisksOpportunitiesAdmin: React.FC = () => {
   const impactLevels = [
     { value: "low", label: "Low", color: "bg-green-500" },
     { value: "medium", label: "Medium", color: "bg-yellow-500" },
-    { value: "high", label: "High", color: "bg-red-500" },
-    { value: "critical", label: "Critical", color: "bg-purple-600" }
+    { value: "high", label: "High", color: "bg-red-500" }
   ];
 
   const probabilityLevels = [
@@ -99,43 +78,15 @@ const RisksOpportunitiesAdmin: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!organizationClient) {
-      toast.error('Organization client not available. Please select an organization.');
-      return;
-    }
-    
     try {
-      // Validate form data
-      const validatedData = riskOpportunitySchema.parse(formData);
-      
-      // Normalize values for database
-      const submitData: any = {
-        type: validatedData.type,
-        title: validatedData.title,
-        description: validatedData.description,
-        status: normalizeStatus(validatedData.status),
-        impact_level: normalizeImpactLevel(validatedData.impact_level),
-        probability: normalizeProbability(validatedData.probability),
-        objective_id: validatedData.objective_id === "none" ? null : validatedData.objective_id,
-        owner: validatedData.owner || null,
-        mitigation_actions: validatedData.mitigation_actions || null,
-        review_date: validatedData.review_date || null
+      const submitData = {
+        ...formData,
+        objective_id: formData.objective_id === "none" ? null : formData.objective_id,
+        review_date: formData.review_date || null
       };
 
-      // Force lowercase at the final step to avoid any case mismatch
-      submitData.status = String(submitData.status).trim().toLowerCase();
-      submitData.impact_level = String(submitData.impact_level).trim().toLowerCase();
-      submitData.probability = String(submitData.probability).trim().toLowerCase();
-
-      console.log('📤 Final submit (forced lower):', {
-        status: `[${submitData.status}]`, statusLen: submitData.status.length,
-        impact_level: `[${submitData.impact_level}]`, impactLen: submitData.impact_level.length,
-        probability: `[${submitData.probability}]`, probLen: submitData.probability.length,
-        raw: submitData
-      });
-
       if (editingId) {
-        const { error } = await organizationClient
+        const { error } = await supabase
           .from('strategic_risks_opportunities')
           .update(submitData)
           .eq('id', editingId);
@@ -144,7 +95,7 @@ const RisksOpportunitiesAdmin: React.FC = () => {
         toast.success(`${formData.type === 'risk' ? 'Risk' : 'Opportunity'} updated successfully`);
         setEditingId(null);
       } else {
-        const { error } = await organizationClient
+        const { error } = await supabase
           .from('strategic_risks_opportunities')
           .insert([submitData]);
         
@@ -168,12 +119,7 @@ const RisksOpportunitiesAdmin: React.FC = () => {
       
       refetch();
     } catch (error: any) {
-      console.error('Error saving risk/opportunity:', error);
-      if (error.name === 'ZodError') {
-        toast.error('Please check all required fields are filled correctly');
-      } else {
-        toast.error(`Error saving: ${error.message}${error.details ? ` - ${error.details}` : ''}${error.hint ? ` (${error.hint})` : ''}`);
-      }
+      toast.error("Error saving: " + error.message);
     }
   };
 
@@ -196,13 +142,8 @@ const RisksOpportunitiesAdmin: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this item?")) return;
     
-    if (!organizationClient) {
-      toast.error('Organization client not available. Please select an organization.');
-      return;
-    }
-    
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('strategic_risks_opportunities')
         .update({ is_active: false })
         .eq('id', id);
@@ -211,8 +152,7 @@ const RisksOpportunitiesAdmin: React.FC = () => {
       toast.success("Item deleted successfully");
       refetch();
     } catch (error: any) {
-      console.error('Error deleting risk/opportunity:', error);
-      toast.error(`Error deleting: ${error.message}${error.details ? ` - ${error.details}` : ''}${error.hint ? ` (${error.hint})` : ''}`);
+      toast.error("Error deleting: " + error.message);
     }
   };
 

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface InitiativeDependencyActionsProps {
   dependency: {
@@ -36,14 +36,11 @@ export const InitiativeDependencyActions: React.FC<InitiativeDependencyActionsPr
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [dependencyType, setDependencyType] = useState(dependency.dependency_type);
   
-  const { organizationClient } = useOrganization();
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
     mutationFn: async (data: { dependency_type: string }) => {
-      if (!organizationClient) throw new Error('Organization client not available');
-      
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('strategic_initiative_dependencies')
         .update(data)
         .eq('id', dependency.id);
@@ -62,9 +59,7 @@ export const InitiativeDependencyActions: React.FC<InitiativeDependencyActionsPr
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      if (!organizationClient) throw new Error('Organization client not available');
-      
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('strategic_initiative_dependencies')
         .delete()
         .eq('id', dependency.id);
@@ -180,14 +175,11 @@ export const MilestoneDependencyActions: React.FC<MilestoneDependencyActionsProp
   const [dependencyType, setDependencyType] = useState(dependency.dependency_type);
   const [lagDays, setLagDays] = useState(dependency.lag_days || 0);
   
-  const { organizationClient } = useOrganization();
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
     mutationFn: async (data: { dependency_type: string; lag_days: number }) => {
-      if (!organizationClient) throw new Error('Organization client not available');
-      
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('strategic_milestone_dependencies')
         .update(data)
         .eq('id', dependency.id);
@@ -206,9 +198,7 @@ export const MilestoneDependencyActions: React.FC<MilestoneDependencyActionsProp
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      if (!organizationClient) throw new Error('Organization client not available');
-      
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('strategic_milestone_dependencies')
         .delete()
         .eq('id', dependency.id);

@@ -1,15 +1,11 @@
 
-import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { MetricDisplay } from '@/types/metrics';
-import type { Database } from '@/integrations/supabase/types';
 
 export const useCockpitMetricsData = () => {
-  const transformMetricsData = async (
-    sectionId: string,
-    client: SupabaseClient<Database>
-  ): Promise<MetricDisplay[]> => {
+  const transformMetricsData = async (sectionId: string): Promise<MetricDisplay[]> => {
     // Get base metrics and their related data
-    const { data: baseMetrics, error: metricsError } = await client
+    const { data: baseMetrics, error: metricsError } = await supabase
       .from('metric_base')
       .select(`
         *,

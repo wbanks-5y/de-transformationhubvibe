@@ -534,8 +534,8 @@ export class BusinessIntelligenceEngine {
     }
 
     if (alerts && alerts.length > 0) {
-      const criticalAlerts = alerts.filter((a: any) => a.type === 'critical');
-      const opportunities = alerts.filter((a: any) => a.type === 'opportunity');
+      const criticalAlerts = alerts.filter(a => a.type === 'critical');
+      const opportunities = alerts.filter(a => a.type === 'opportunity');
       
       if (criticalAlerts.length > 0) {
         result += '\n\nCRITICAL ALERTS:';

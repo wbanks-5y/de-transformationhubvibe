@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Plus, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -21,7 +21,6 @@ interface MetricsFormData {
 }
 
 const ProcessOptimizationMetricsAdmin: React.FC<ProcessOptimizationMetricsAdminProps> = ({ selectedProcessId }) => {
-  const { organizationClient } = useOrganization();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedMetrics, setSelectedMetrics] = useState<any>(null);
@@ -34,9 +33,9 @@ const ProcessOptimizationMetricsAdmin: React.FC<ProcessOptimizationMetricsAdminP
   const { data: metrics = [], refetch, isLoading } = useQuery({
     queryKey: ['process-optimization-metrics', selectedProcessId],
     queryFn: async () => {
-      if (!selectedProcessId || !organizationClient) return [];
+      if (!selectedProcessId) return [];
       
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('process_optimization_metrics')
         .select('*')
         .eq('process_id', selectedProcessId);
@@ -44,7 +43,7 @@ const ProcessOptimizationMetricsAdmin: React.FC<ProcessOptimizationMetricsAdminP
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedProcessId && !!organizationClient,
+    enabled: !!selectedProcessId,
   });
 
   const resetForm = () => {
@@ -56,13 +55,13 @@ const ProcessOptimizationMetricsAdmin: React.FC<ProcessOptimizationMetricsAdminP
   };
 
   const handleCreate = async () => {
-    if (!selectedProcessId || !organizationClient) {
+    if (!selectedProcessId) {
       toast.error("Please select a process first");
       return;
     }
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_optimization_metrics')
         .insert([{
           ...formData,
@@ -92,10 +91,10 @@ const ProcessOptimizationMetricsAdmin: React.FC<ProcessOptimizationMetricsAdminP
   };
 
   const handleUpdate = async () => {
-    if (!selectedMetrics || !organizationClient) return;
+    if (!selectedMetrics) return;
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_optimization_metrics')
         .update(formData)
         .eq('id', selectedMetrics.id);
@@ -114,10 +113,10 @@ const ProcessOptimizationMetricsAdmin: React.FC<ProcessOptimizationMetricsAdminP
   };
 
   const handleDelete = async (metricsItem: any) => {
-    if (!confirm("Are you sure you want to delete these optimization metrics?") || !organizationClient) return;
+    if (!confirm("Are you sure you want to delete these optimization metrics?")) return;
 
     try {
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('process_optimization_metrics')
         .delete()
         .eq('id', metricsItem.id);

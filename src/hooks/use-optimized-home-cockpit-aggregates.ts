@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface OptimizedCockpitAggregate {
   cockpit_type_id: string;
@@ -51,27 +51,21 @@ const setCachedData = (data: OptimizedCockpitAggregate[]) => {
 };
 
 export const useOptimizedHomeCockpitAggregates = () => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['optimized-home-cockpit-aggregates'],
     queryFn: async () => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-
-      console.log('Fetching optimized home cockpit aggregates...');
+      console.log('🚀 Fetching optimized home cockpit aggregates...');
       
       const startTime = Date.now();
-      const { data, error } = await organizationClient.rpc('get_home_cockpit_aggregates');
+      const { data, error } = await supabase.rpc('get_home_cockpit_aggregates');
       const elapsed = Date.now() - startTime;
       
       if (error) {
-        console.error('Error fetching optimized cockpit aggregates:', error);
+        console.error('❌ Error fetching optimized cockpit aggregates:', error);
         throw error;
       }
 
-      console.log(`Optimized aggregates fetched in ${elapsed}ms:`, data?.length || 0, 'cockpits');
+      console.log(`✅ Optimized aggregates fetched in ${elapsed}ms:`, data?.length || 0, 'cockpits');
       
       const aggregates = (data || []) as OptimizedCockpitAggregate[];
       
@@ -80,7 +74,6 @@ export const useOptimizedHomeCockpitAggregates = () => {
       
       return aggregates;
     },
-    enabled: !!organizationClient,
     staleTime: 3 * 60 * 1000, // Consider data stale after 3 minutes
     gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
     refetchOnWindowFocus: false, // Don't refetch on window focus
@@ -89,7 +82,7 @@ export const useOptimizedHomeCockpitAggregates = () => {
       // Try to get cached data as initial data for instant loading
       const cached = getCachedData();
       if (cached) {
-        console.log('Using cached data for instant loading:', cached.length, 'cockpits');
+        console.log('📋 Using cached data for instant loading:', cached.length, 'cockpits');
         return cached;
       }
       return undefined;

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useOrganization } from "@/context/OrganizationContext";
 import { toast } from "sonner";
-import { callEdgeFunction } from "@/lib/supabase/edge-function-helper";
 import {
   Card,
   CardContent,
@@ -13,11 +11,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Mail, X, RefreshCw, Search } from "lucide-react";
+import { Mail, X, RefreshCw } from "lucide-react";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -35,14 +30,9 @@ interface PendingInvitation {
 }
 
 const InvitationsManagement = () => {
-  const { organizationClient, currentOrganization } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
-  const [loadingInvitations, setLoadingInvitations] = useState(false);
-  const [forceFallback, setForceFallback] = useState(false);
-  const [checkEmailId, setCheckEmailId] = useState("");
-  const [showStatusDialog, setShowStatusDialog] = useState(false);
-  const [emailStatus, setEmailStatus] = useState<any>(null);
+  const [loadingInvitations, setLoadingInvitations] = useState(true);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -50,28 +40,15 @@ const InvitationsManagement = () => {
       email: "",
     },
   });
-
-  // Safety check for organization context
-  if (!organizationClient || !currentOrganization) {
-    return (
-      <div className="container px-4 py-6 mx-auto">
-        <div className="flex items-center justify-center h-64">
-          <p className="text-muted-foreground">Error: Organization context not available</p>
-        </div>
-      </div>
-    );
-  }
   
   const fetchPendingInvitations = async () => {
     try {
       setLoadingInvitations(true);
       console.log('Fetching pending invitations via edge function...');
       
-      const { data, error } = await callEdgeFunction(
-        organizationClient,
-        'invite-user',
-        { method: 'GET' }
-      );
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        method: 'GET'
+      });
       
       if (error) {
         console.error('Error fetching invitations:', error);
@@ -94,14 +71,9 @@ const InvitationsManagement = () => {
       setLoading(true);
       console.log('Resending invitation to:', email);
       
-      const { data, error } = await callEdgeFunction(
-        organizationClient,
-        'invite-user',
-        {
-          method: 'POST',
-          body: { email, organizationSlug: currentOrganization.slug, forceFallback }
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: { email }
+      });
       
       if (error) {
         console.error('Error resending invitation:', error);
@@ -127,16 +99,8 @@ const InvitationsManagement = () => {
         throw new Error(data.error);
       }
       
-      // Show success with debug info if available
-      let successMessage = `Invitation resent to ${email}. Click refresh to update the list.`;
-      if (data?.resendEmailId || data?.correlationId) {
-        console.log(`[Debug] Resend Email ID: ${data?.resendEmailId || 'N/A'}, Correlation ID: ${data?.correlationId || 'N/A'}, Send Path: ${data?.sendPath || 'N/A'}`);
-        successMessage += ` [ID: ${data?.resendEmailId || data?.correlationId || 'N/A'}] (${data?.sendPath || 'primary'})`;
-      }
-      
-      toast.success(successMessage, {
-        duration: 5000,
-      });
+      toast.success(`Invitation resent to ${email}`);
+      fetchPendingInvitations(); // Refresh the list
     } catch (error: any) {
       console.error('Resend invitation error:', error);
       toast.error(error.message || "Failed to resend invitation");
@@ -150,14 +114,10 @@ const InvitationsManagement = () => {
       setLoading(true);
       console.log('Canceling invitation for:', email);
       
-      const { data, error } = await callEdgeFunction(
-        organizationClient,
-        'invite-user',
-        {
-          method: 'DELETE',
-          body: { email }
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        method: 'DELETE',
+        body: { email }
+      });
       
       if (error) {
         console.error('Error canceling invitation:', error);
@@ -169,7 +129,8 @@ const InvitationsManagement = () => {
         throw new Error(data.error);
       }
       
-      toast.success(`Invitation cancelled for ${email}. Click refresh to update the list.`);
+      toast.success(`Invitation cancelled for ${email}`);
+      fetchPendingInvitations(); // Refresh the list
     } catch (error: any) {
       console.error('Cancel invitation error:', error);
       toast.error(error.message || "Failed to cancel invitation");
@@ -178,20 +139,18 @@ const InvitationsManagement = () => {
     }
   };
 
+  useEffect(() => {
+    fetchPendingInvitations();
+  }, []);
   
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
     try {
       console.log('Sending invitation to:', values.email);
       
-      const { data, error } = await callEdgeFunction(
-        organizationClient,
-        'invite-user',
-        {
-          method: 'POST',
-          body: { email: values.email, organizationSlug: currentOrganization.slug, forceFallback }
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: { email: values.email }
+      });
       
       if (error) {
         console.error('Error invoking invite function:', error);
@@ -219,17 +178,8 @@ const InvitationsManagement = () => {
       
       console.log('Invitation response:', data);
       form.reset();
-      
-      // Show success with debug info if available
-      let successMessage = `Invitation sent to ${values.email}. Click refresh to see it in the list.`;
-      if (data?.resendEmailId || data?.correlationId) {
-        console.log(`[Debug] Resend Email ID: ${data?.resendEmailId || 'N/A'}, Correlation ID: ${data?.correlationId || 'N/A'}, Send Path: ${data?.sendPath || 'N/A'}`);
-        successMessage += ` [ID: ${data?.resendEmailId || data?.correlationId || 'N/A'}] (${data?.sendPath || 'primary'})`;
-      }
-      
-      toast.success(successMessage, {
-        duration: 5000,
-      });
+      toast.success(`Invitation sent to ${values.email}`);
+      fetchPendingInvitations(); // Refresh the list after sending
     } catch (error: any) {
       console.error('Invitation error:', error);
       toast.error(error.message || "Failed to send invitation");
@@ -237,40 +187,6 @@ const InvitationsManagement = () => {
       setLoading(false);
     }
   }
-
-  const checkDeliveryStatus = async () => {
-    if (!checkEmailId.trim()) {
-      toast.error("Please enter an email ID");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const { data, error } = await callEdgeFunction(
-        organizationClient,
-        'resend-email-status',
-        {
-          method: 'POST',
-          body: { emailId: checkEmailId }
-        }
-      );
-
-      if (error) throw error;
-
-      if (data?.error) {
-        toast.error(data.error);
-        setEmailStatus({ error: data.error, details: data.details });
-      } else {
-        setEmailStatus(data.email);
-        toast.success(`Email status: ${data.email?.last_event || 'unknown'}`);
-      }
-    } catch (error) {
-      console.error('Error checking status:', error);
-      toast.error("Failed to check email status");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="container px-4 py-6 mx-auto space-y-6">
@@ -305,16 +221,6 @@ const InvitationsManagement = () => {
                     </FormItem>
                   )}
                 />
-                <div className="flex items-center space-x-2 mb-4">
-                  <Checkbox 
-                    id="forceFallback" 
-                    checked={forceFallback}
-                    onCheckedChange={(checked) => setForceFallback(checked === true)}
-                  />
-                  <Label htmlFor="forceFallback" className="text-sm cursor-pointer">
-                    Use test sender (onboarding@resend.dev)
-                  </Label>
-                </div>
                 <Button 
                   type="submit" 
                   className="w-full"
@@ -324,84 +230,6 @@ const InvitationsManagement = () => {
                 </Button>
               </form>
             </Form>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Delivery Debug</CardTitle>
-            <CardDescription>Check the delivery status of a sent invitation</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Enter Resend email ID"
-                value={checkEmailId}
-                onChange={(e) => setCheckEmailId(e.target.value)}
-              />
-              <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
-                <DialogTrigger asChild>
-                  <Button onClick={checkDeliveryStatus} disabled={loading}>
-                    <Search className="h-4 w-4 mr-2" />
-                    Check
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Email Delivery Status</DialogTitle>
-                    <DialogDescription>
-                      Resend API response for email ID: {checkEmailId}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-3">
-                    {emailStatus ? (
-                      <>
-                        {emailStatus.error ? (
-                          <div className="text-destructive">
-                            <p className="font-semibold">Error:</p>
-                            <p>{emailStatus.error}</p>
-                            {emailStatus.details && (
-                              <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto">
-                                {JSON.stringify(emailStatus.details, null, 2)}
-                              </pre>
-                            )}
-                          </div>
-                        ) : (
-                          <>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <p className="font-semibold text-sm">Status:</p>
-                                <p className="text-sm">{emailStatus.last_event || 'No events yet'}</p>
-                              </div>
-                              <div>
-                                <p className="font-semibold text-sm">To:</p>
-                                <p className="text-sm">{emailStatus.to?.join(', ') || 'N/A'}</p>
-                              </div>
-                              <div>
-                                <p className="font-semibold text-sm">From:</p>
-                                <p className="text-sm">{emailStatus.from || 'N/A'}</p>
-                              </div>
-                              <div>
-                                <p className="font-semibold text-sm">Created:</p>
-                                <p className="text-sm">{emailStatus.created_at ? new Date(emailStatus.created_at).toLocaleString() : 'N/A'}</p>
-                              </div>
-                            </div>
-                            <details className="mt-4">
-                              <summary className="cursor-pointer font-semibold text-sm">Full Response</summary>
-                              <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto max-h-60">
-                                {JSON.stringify(emailStatus, null, 2)}
-                              </pre>
-                            </details>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-muted-foreground text-sm">Enter an email ID and click Check</p>
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
           </CardContent>
         </Card>
         
@@ -432,9 +260,9 @@ const InvitationsManagement = () => {
             ) : pendingInvitations.length === 0 ? (
               <div className="h-48 flex flex-col items-center justify-center text-center">
                 <Mail className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No pending invitations loaded</p>
+                <p className="text-muted-foreground">No pending invitations</p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Click the refresh button above to load pending invitations
+                  Invitations will appear here once they've been sent
                 </p>
               </div>
             ) : (

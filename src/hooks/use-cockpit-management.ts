@@ -1,20 +1,16 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 import { CockpitType } from '@/types/cockpit';
 import { toast } from 'sonner';
 
 export const useCreateCockpitType = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async (data: Omit<CockpitType, 'id' | 'created_at' | 'updated_at'>) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
       console.log('Creating cockpit type:', data);
-      const { data: result, error } = await organizationClient
+      const { data: result, error } = await supabase
         .from('cockpit_types')
         .insert(data)
         .select()
@@ -41,15 +37,11 @@ export const useCreateCockpitType = () => {
 
 export const useUpdateCockpitType = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<CockpitType> }) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
       console.log('Updating cockpit type:', id, updates);
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('cockpit_types')
         .update(updates)
         .eq('id', id)
@@ -76,19 +68,15 @@ export const useUpdateCockpitType = () => {
 
 export const useDeleteCockpitType = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async (id: string) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
       console.log('Starting cascading deletion for cockpit type:', id);
       
       try {
         // Step 1: Get all KPIs for this cockpit
         console.log('Step 1: Fetching KPIs for cockpit:', id);
-        const { data: kpis, error: kpiError } = await organizationClient
+        const { data: kpis, error: kpiError } = await supabase
           .from('cockpit_kpis')
           .select('id')
           .eq('cockpit_type_id', id);
@@ -107,7 +95,7 @@ export const useDeleteCockpitType = () => {
           
           // Delete KPI values
           console.log('Deleting KPI values...');
-          const { error: valuesError } = await organizationClient
+          const { error: valuesError } = await supabase
             .from('cockpit_kpi_values')
             .delete()
             .in('kpi_id', kpiIds);
@@ -120,7 +108,7 @@ export const useDeleteCockpitType = () => {
 
           // Delete KPI targets
           console.log('Deleting KPI targets...');
-          const { error: targetsError } = await organizationClient
+          const { error: targetsError } = await supabase
             .from('cockpit_kpi_targets')
             .delete()
             .in('kpi_id', kpiIds);
@@ -133,7 +121,7 @@ export const useDeleteCockpitType = () => {
 
           // Delete KPI time-based data
           console.log('Deleting KPI time-based data...');
-          const { error: timeBasedError } = await organizationClient
+          const { error: timeBasedError } = await supabase
             .from('cockpit_kpi_time_based')
             .delete()
             .in('kpi_id', kpiIds);
@@ -146,7 +134,7 @@ export const useDeleteCockpitType = () => {
 
           // Delete the KPIs themselves
           console.log('Deleting KPIs...');
-          const { error: kpisError } = await organizationClient
+          const { error: kpisError } = await supabase
             .from('cockpit_kpis')
             .delete()
             .eq('cockpit_type_id', id);
@@ -160,7 +148,7 @@ export const useDeleteCockpitType = () => {
 
         // Step 3: Delete cockpit insights
         console.log('Step 3: Deleting cockpit insights...');
-        const { error: insightsError } = await organizationClient
+        const { error: insightsError } = await supabase
           .from('cockpit_insights')
           .delete()
           .eq('cockpit_type_id', id);
@@ -173,7 +161,7 @@ export const useDeleteCockpitType = () => {
 
         // Step 4: Delete cockpit sections
         console.log('Step 4: Deleting cockpit sections...');
-        const { error: sectionsError } = await organizationClient
+        const { error: sectionsError } = await supabase
           .from('cockpit_sections')
           .delete()
           .eq('cockpit_type_id', id);
@@ -186,7 +174,7 @@ export const useDeleteCockpitType = () => {
 
         // Step 5: Delete cockpit filters
         console.log('Step 5: Deleting cockpit filters...');
-        const { error: filtersError } = await organizationClient
+        const { error: filtersError } = await supabase
           .from('cockpit_filters')
           .delete()
           .eq('cockpit_type_id', id);
@@ -199,7 +187,7 @@ export const useDeleteCockpitType = () => {
 
         // Step 6: Finally delete the cockpit type itself
         console.log('Step 6: Deleting cockpit type...');
-        const { error: cockpitError } = await organizationClient
+        const { error: cockpitError } = await supabase
           .from('cockpit_types')
           .delete()
           .eq('id', id);
@@ -236,15 +224,11 @@ export const useDeleteCockpitType = () => {
 
 export const useToggleCockpitStatus = () => {
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
   
   return useMutation({
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
       console.log('Toggling cockpit status:', id, isActive);
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('cockpit_types')
         .update({ is_active: isActive })
         .eq('id', id)

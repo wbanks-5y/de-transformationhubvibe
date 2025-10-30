@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Plus } from "lucide-react";
-import { useOrganization } from "@/context/OrganizationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useStrategicObjectives } from "@/hooks/use-strategic-objectives";
 import { useQueryClient } from "@tanstack/react-query";
@@ -22,7 +22,6 @@ const AddMilestoneDialog: React.FC<AddMilestoneDialogProps> = ({ children }) => 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: objectives = [] } = useStrategicObjectives();
   const queryClient = useQueryClient();
-  const { organizationClient } = useOrganization();
 
   const [formData, setFormData] = useState({
     milestone_name: '',
@@ -45,9 +44,7 @@ const AddMilestoneDialog: React.FC<AddMilestoneDialogProps> = ({ children }) => 
 
     setIsSubmitting(true);
     try {
-      if (!organizationClient) throw new Error('Organization client not available');
-      
-      const { error } = await organizationClient
+      const { error } = await supabase
         .from('strategic_initiative_milestones')
         .insert([{
           milestone_name: formData.milestone_name,

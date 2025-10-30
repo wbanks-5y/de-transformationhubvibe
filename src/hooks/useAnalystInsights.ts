@@ -1,6 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { useOrganization } from '@/context/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface AnalystInsight {
   id: string;
@@ -22,15 +22,10 @@ export interface AnalystInsight {
 }
 
 export const useAnalystInsights = () => {
-  const { organizationClient } = useOrganization();
-
   return useQuery({
     queryKey: ['analyst-insights'],
     queryFn: async (): Promise<AnalystInsight[]> => {
-      if (!organizationClient) {
-        throw new Error('No organization client available');
-      }
-      const { data, error } = await organizationClient
+      const { data, error } = await supabase
         .from('analyst_insights')
         .select('*')
         .eq('is_active', true)
@@ -47,7 +42,6 @@ export const useAnalystInsights = () => {
         approval_status: insight.approval_status as 'pending' | 'approved' | 'rejected',
         tags: Array.isArray(insight.tags) ? insight.tags.map(tag => String(tag)) : []
       }));
-    },
-    enabled: !!organizationClient,
+    }
   });
 };

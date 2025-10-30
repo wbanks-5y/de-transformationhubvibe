@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Type definitions
 export interface AuthUser {
@@ -14,8 +13,6 @@ export interface AuthUser {
 
 export interface UserProfile {
   id: string;
-  email: string | null;
-  created_at: string | null;
   full_name: string | null;
   company: string | null;
   job_title: string | null;
@@ -27,7 +24,6 @@ export interface UserProfile {
 
 /**
  * Fetch all users from Supabase Auth API via edge function
- * @deprecated No longer used - user data is fetched directly from profiles table
  */
 export const fetchAllAuthUsers = async (): Promise<AuthUser[]> => {
   try {
@@ -72,9 +68,8 @@ export const fetchAllAuthUsers = async (): Promise<AuthUser[]> => {
 /**
  * Fetch all user profiles from the database
  */
-export const fetchAllProfiles = async (client?: SupabaseClient): Promise<UserProfile[]> => {
-  const supabaseClient = client || supabase;
-  const { data, error } = await supabaseClient
+export const fetchAllProfiles = async (): Promise<UserProfile[]> => {
+  const { data, error } = await supabase
     .from('profiles')
     .select('*');
     
@@ -88,9 +83,8 @@ export const fetchAllProfiles = async (client?: SupabaseClient): Promise<UserPro
 /**
  * Fetch all user roles from the database
  */
-export const fetchAllUserRoles = async (client?: SupabaseClient) => {
-  const supabaseClient = client || supabase;
-  const { data, error } = await supabaseClient
+export const fetchAllUserRoles = async () => {
+  const { data, error } = await supabase
     .from('user_roles')
     .select('*');
     
@@ -106,16 +100,14 @@ export const fetchAllUserRoles = async (client?: SupabaseClient) => {
  */
 export const updateUserProfile = async (
   id: string,
-  profileData: Partial<UserProfile>,
-  client?: SupabaseClient
+  profileData: Partial<UserProfile>
 ): Promise<UserProfile> => {
-  const supabaseClient = client || supabase;
   // Check if profile already exists
-  const { data: existingProfile, error: fetchError } = await supabaseClient
+  const { data: existingProfile, error: fetchError } = await supabase
     .from('profiles')
     .select()
     .eq('id', id)
-    .maybeSingle();
+    .single();
     
   if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "not found" error
     throw fetchError;
@@ -123,7 +115,7 @@ export const updateUserProfile = async (
   
   if (existingProfile) {
     // Update existing profile
-    const { data, error } = await supabaseClient
+    const { data, error } = await supabase
       .from('profiles')
       .update({
         ...profileData,
@@ -137,7 +129,7 @@ export const updateUserProfile = async (
     return data;
   } else {
     // Create new profile
-    const { data, error } = await supabaseClient
+    const { data, error } = await supabase
       .from('profiles')
       .insert({
         id,
@@ -155,18 +147,17 @@ export const updateUserProfile = async (
 /**
  * Update a user's status - ensures profile exists first
  */
-export const updateUserStatus = async (id: string, status: string, client?: SupabaseClient): Promise<void> => {
-  const supabaseClient = client || supabase;
+export const updateUserStatus = async (id: string, status: string): Promise<void> => {
   // First ensure the profile exists by trying to fetch it
-  const { data: existingProfile, error: fetchError } = await supabaseClient
+  const { data: existingProfile, error: fetchError } = await supabase
     .from('profiles')
     .select()
     .eq('id', id)
-    .maybeSingle();
+    .single();
     
   if (fetchError && fetchError.code === 'PGRST116') {
     // Profile doesn't exist, create it with the new status
-    const { error: insertError } = await supabaseClient
+    const { error: insertError } = await supabase
       .from('profiles')
       .insert({
         id,
@@ -180,7 +171,7 @@ export const updateUserStatus = async (id: string, status: string, client?: Supa
     throw fetchError;
   } else {
     // Profile exists, update it
-    const { error: updateError } = await supabaseClient
+    const { error: updateError } = await supabase
       .from('profiles')
       .update({
         status,
