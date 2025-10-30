@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
@@ -16,7 +15,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     let subject = "";
     let htmlContent = "";
-    
+
     // Generate appropriate email content based on the event type
     switch (type) {
       case "signup":
@@ -41,46 +40,40 @@ const handler = async (req: Request): Promise<Response> => {
         break;
       default:
         console.error("Unsupported email type:", type);
-        return new Response(
-          JSON.stringify({ error: "Unsupported email type" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "Unsupported email type" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
     }
-    
+
     const response = {
       subject,
-      html_content: htmlContent
+      html_content: htmlContent,
     };
-    
+
     console.log("Returning email template with subject:", subject);
-    
+
     // Return the custom email template
-    return new Response(
-      JSON.stringify(response),
-      {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json"
-        },
-        status: 200,
-      }
-    );
+    return new Response(JSON.stringify(response), {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+      },
+      status: 200,
+    });
   } catch (error) {
     console.error("Error in custom-email-template function:", error);
-    return new Response(
-      JSON.stringify({ error: error.message || "Unknown error occurred" }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
-    );
+    return new Response(JSON.stringify({ error: error.message || "Unknown error occurred" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 };
 
 // Helper function to generate signup confirmation email
 function generateSignupEmail(url: string, email: string): string {
   const origin = new URL(url).origin;
-  
+
   return `
   <!DOCTYPE html>
   <html>
@@ -128,7 +121,7 @@ function generateSignupEmail(url: string, email: string): string {
   </head>
   <body>
     <div class="header">
-      <img src="https://jyuxaifsevdwbjwldgbw.supabase.co/storage/v1/object/public/logos/5YLogo.png" alt="5Y Transformation Hub" class="logo">
+      <img src="https://gvrxydwedhppmvppqwwm.supabase.co/storage/v1/object/public/logos/5YLogo.png" alt="5Y Transformation Hub" class="logo">
     </div>
     <div class="container">
       <h1>Welcome to 5Y Transformation Hub!</h1>
@@ -199,7 +192,7 @@ function generateMagicLinkEmail(url: string, email: string): string {
   </head>
   <body>
     <div class="header">
-      <img src="https://jyuxaifsevdwbjwldgbw.supabase.co/storage/v1/object/public/logos/5YLogo.png" alt="5Y Transformation Hub" class="logo">
+      <img src="https://gvrxydwedhppmvppqwwm.supabase.co/storage/v1/object/public/logos/5YLogo.png" alt="5Y Transformation Hub" class="logo">
     </div>
     <div class="container">
       <h1>Login to 5Y Transformation Hub</h1>
@@ -270,7 +263,7 @@ function generateRecoveryEmail(url: string, email: string): string {
   </head>
   <body>
     <div class="header">
-      <img src="https://jyuxaifsevdwbjwldgbw.supabase.co/storage/v1/object/public/logos/5YLogo.png" alt="5Y Transformation Hub" class="logo">
+      <img src="https://gvrxydwedhppmvppqwwm.supabase.co/storage/v1/object/public/logos/5YLogo.png" alt="5Y Transformation Hub" class="logo">
     </div>
     <div class="container">
       <h1>Reset Your Password</h1>
@@ -341,7 +334,7 @@ function generateInviteEmail(url: string, email: string): string {
   </head>
   <body>
     <div class="header">
-      <img src="https://jyuxaifsevdwbjwldgbw.supabase.co/storage/v1/object/public/logos/5YLogo.png" alt="5Y Transformation Hub" class="logo">
+      <img src="https://gvrxydwedhppmvppqwwm.supabase.co/storage/v1/object/public/logos/5YLogo.png" alt="5Y Transformation Hub" class="logo">
     </div>
     <div class="container">
       <h1>You've Been Invited to Join 5Y Transformation Hub</h1>
@@ -412,7 +405,7 @@ function generateChangeEmailTemplate(url: string, email: string): string {
   </head>
   <body>
     <div class="header">
-      <img src="https://jyuxaifsevdwbjwldgbw.supabase.co/storage/v1/object/public/logos/5YLogo.png" alt="5Y Transformation Hub" class="logo">
+      <img src="https://gvrxydwedhppmvppqwwm.supabase.co/storage/v1/object/public/logos/5YLogo.png" alt="5Y Transformation Hub" class="logo">
     </div>
     <div class="container">
       <h1>Confirm Your New Email</h1>

@@ -13,79 +13,76 @@ interface DatabaseConfig {
   url: string;
   anonKey: string;
   isActive: boolean;
-  status: 'connected' | 'disconnected' | 'testing';
+  status: "connected" | "disconnected" | "testing";
 }
 
 const DatabaseConfiguration: React.FC = () => {
   const [configs, setConfigs] = useState<DatabaseConfig[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newConfig, setNewConfig] = useState({
-    name: '',
-    url: '',
-    anonKey: ''
+    name: "",
+    url: "",
+    anonKey: "",
   });
   const [testing, setTesting] = useState<string | null>(null);
 
   // Load existing configurations from localStorage
   useEffect(() => {
-    const savedConfigs = localStorage.getItem('supabase-configs');
+    const savedConfigs = localStorage.getItem("supabase-configs");
     if (savedConfigs) {
       setConfigs(JSON.parse(savedConfigs));
     } else {
       // Add current configuration as default
       const currentConfig: DatabaseConfig = {
-        id: 'current',
-        name: 'Current Database',
-        url: 'https://jyuxaifsevdwbjwldgbw.supabase.co',
-        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5dXhhaWZzZXZkd2Jqd2xkZ2J3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY2ODk5MDQsImV4cCI6MjA2MjI2NTkwNH0.TfkVlPwyiGtmCQrue0v0RItOa_tcadnBDMNzOg10NaI',
+        id: "current",
+        name: "Current Database",
+        url: "https://gvrxydwedhppmvppqwwm.supabase.co",
+        anonKey:
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5dXhhaWZzZXZkd2Jqd2xkZ2J3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY2ODk5MDQsImV4cCI6MjA2MjI2NTkwNH0.TfkVlPwyiGtmCQrue0v0RItOa_tcadnBDMNzOg10NaI",
         isActive: true,
-        status: 'connected'
+        status: "connected",
       };
       setConfigs([currentConfig]);
-      localStorage.setItem('supabase-configs', JSON.stringify([currentConfig]));
+      localStorage.setItem("supabase-configs", JSON.stringify([currentConfig]));
     }
   }, []);
 
   const saveConfigs = (newConfigs: DatabaseConfig[]) => {
     setConfigs(newConfigs);
-    localStorage.setItem('supabase-configs', JSON.stringify(newConfigs));
+    localStorage.setItem("supabase-configs", JSON.stringify(newConfigs));
   };
 
   const testConnection = async (config: DatabaseConfig) => {
     setTesting(config.id);
-    
+
     try {
-      console.log('Testing connection to:', config.url);
-      
+      console.log("Testing connection to:", config.url);
+
       // Create a temporary Supabase client to test the connection
-      const { createClient } = await import('@supabase/supabase-js');
+      const { createClient } = await import("@supabase/supabase-js");
       const testClient = createClient(config.url, config.anonKey);
-      
+
       // Use the simplest possible test - just try to get the current session
       // This tests if the client can connect and the credentials are valid
       const { data, error } = await testClient.auth.getSession();
-      
-      console.log('Connection test result:', { data, error });
-      
+
+      console.log("Connection test result:", { data, error });
+
       // If we get here without throwing, the connection works
       // We don't need a valid session, just a successful response
-      if (error && error.message && error.message.includes('fetch')) {
-        throw new Error('Network connection failed - check URL');
+      if (error && error.message && error.message.includes("fetch")) {
+        throw new Error("Network connection failed - check URL");
       }
 
-      const updatedConfigs = configs.map(c => 
-        c.id === config.id ? { ...c, status: 'connected' as const } : c
-      );
+      const updatedConfigs = configs.map((c) => (c.id === config.id ? { ...c, status: "connected" as const } : c));
       saveConfigs(updatedConfigs);
       toast.success(`Connection to ${config.name} successful`);
     } catch (error) {
-      console.error('Connection test failed:', error);
-      const updatedConfigs = configs.map(c => 
-        c.id === config.id ? { ...c, status: 'disconnected' as const } : c
-      );
+      console.error("Connection test failed:", error);
+      const updatedConfigs = configs.map((c) => (c.id === config.id ? { ...c, status: "disconnected" as const } : c));
       saveConfigs(updatedConfigs);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       toast.error(`Connection to ${config.name} failed: ${errorMessage}`);
     } finally {
       setTesting(null);
@@ -95,25 +92,28 @@ const DatabaseConfiguration: React.FC = () => {
   const switchDatabase = async (config: DatabaseConfig) => {
     try {
       // Update all configs to set the selected one as active
-      const updatedConfigs = configs.map(c => ({
+      const updatedConfigs = configs.map((c) => ({
         ...c,
-        isActive: c.id === config.id
+        isActive: c.id === config.id,
       }));
       saveConfigs(updatedConfigs);
 
       // Update the global Supabase client configuration
       // Note: This requires a page refresh to fully take effect
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         // Store the new configuration for the application to use
-        localStorage.setItem('active-supabase-config', JSON.stringify({
-          url: config.url,
-          anonKey: config.anonKey
-        }));
+        localStorage.setItem(
+          "active-supabase-config",
+          JSON.stringify({
+            url: config.url,
+            anonKey: config.anonKey,
+          }),
+        );
       }
 
       toast.success(`Switched to ${config.name}`, {
         description: "The page will refresh to apply the new database connection",
-        duration: 2000
+        duration: 2000,
       });
 
       // Refresh the page after a short delay to allow the toast to show
@@ -121,20 +121,20 @@ const DatabaseConfiguration: React.FC = () => {
         window.location.reload();
       }, 2000);
     } catch (error) {
-      console.error('Failed to switch database:', error);
-      toast.error('Failed to switch database');
+      console.error("Failed to switch database:", error);
+      toast.error("Failed to switch database");
     }
   };
 
   const addNewConfig = () => {
     if (!newConfig.name || !newConfig.url || !newConfig.anonKey) {
-      toast.error('Please fill in all fields');
+      toast.error("Please fill in all fields");
       return;
     }
 
     // Validate URL format
-    if (!newConfig.url.includes('supabase.co')) {
-      toast.error('Please enter a valid Supabase URL');
+    if (!newConfig.url.includes("supabase.co")) {
+      toast.error("Please enter a valid Supabase URL");
       return;
     }
 
@@ -144,38 +144,36 @@ const DatabaseConfiguration: React.FC = () => {
       url: newConfig.url,
       anonKey: newConfig.anonKey,
       isActive: false,
-      status: 'disconnected'
+      status: "disconnected",
     };
 
     const updatedConfigs = [...configs, config];
     saveConfigs(updatedConfigs);
-    setNewConfig({ name: '', url: '', anonKey: '' });
+    setNewConfig({ name: "", url: "", anonKey: "" });
     setShowAddForm(false);
-    toast.success('Database configuration added. Test the connection before switching.');
+    toast.success("Database configuration added. Test the connection before switching.");
   };
 
   const removeConfig = (configId: string) => {
-    const config = configs.find(c => c.id === configId);
+    const config = configs.find((c) => c.id === configId);
     if (config?.isActive) {
-      toast.error('Cannot remove active configuration');
+      toast.error("Cannot remove active configuration");
       return;
     }
 
-    const updatedConfigs = configs.filter(c => c.id !== configId);
+    const updatedConfigs = configs.filter((c) => c.id !== configId);
     saveConfigs(updatedConfigs);
-    toast.success('Configuration removed');
+    toast.success("Configuration removed");
   };
 
-  const getCurrentConfig = () => configs.find(c => c.isActive);
+  const getCurrentConfig = () => configs.find((c) => c.isActive);
   const currentConfig = getCurrentConfig();
 
   return (
     <div className="container mx-auto p-4 lg:p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Database Management</h1>
-        <p className="text-gray-500 mt-2">
-          Manage Supabase database connections and configurations
-        </p>
+        <p className="text-gray-500 mt-2">Manage Supabase database connections and configurations</p>
       </div>
 
       {/* Current Active Configuration */}
@@ -185,9 +183,7 @@ const DatabaseConfiguration: React.FC = () => {
             <Database className="h-5 w-5" />
             Active Database Connection
           </CardTitle>
-          <CardDescription>
-            Currently active Supabase database configuration
-          </CardDescription>
+          <CardDescription>Currently active Supabase database configuration</CardDescription>
         </CardHeader>
         <CardContent>
           {currentConfig ? (
@@ -198,8 +194,8 @@ const DatabaseConfiguration: React.FC = () => {
                   <p className="text-sm text-gray-500">{currentConfig.url}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={currentConfig.status === 'connected' ? 'default' : 'destructive'}>
-                    {currentConfig.status === 'connected' ? (
+                  <Badge variant={currentConfig.status === "connected" ? "default" : "destructive"}>
+                    {currentConfig.status === "connected" ? (
                       <CheckCircle className="h-3 w-3 mr-1" />
                     ) : (
                       <AlertCircle className="h-3 w-3 mr-1" />
@@ -212,11 +208,7 @@ const DatabaseConfiguration: React.FC = () => {
                     onClick={() => testConnection(currentConfig)}
                     disabled={testing === currentConfig.id}
                   >
-                    {testing === currentConfig.id ? (
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                    ) : (
-                      'Test Connection'
-                    )}
+                    {testing === currentConfig.id ? <RefreshCw className="h-4 w-4 animate-spin" /> : "Test Connection"}
                   </Button>
                 </div>
               </div>
@@ -233,13 +225,9 @@ const DatabaseConfiguration: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Database Configurations</CardTitle>
-              <CardDescription>
-                Manage all Supabase database configurations
-              </CardDescription>
+              <CardDescription>Manage all Supabase database configurations</CardDescription>
             </div>
-            <Button onClick={() => setShowAddForm(true)}>
-              Add Configuration
-            </Button>
+            <Button onClick={() => setShowAddForm(true)}>Add Configuration</Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -254,36 +242,22 @@ const DatabaseConfiguration: React.FC = () => {
                   <p className="text-sm text-gray-500 mt-1">{config.url}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={config.status === 'connected' ? 'default' : 'destructive'}>
-                    {config.status}
-                  </Badge>
+                  <Badge variant={config.status === "connected" ? "default" : "destructive"}>{config.status}</Badge>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => testConnection(config)}
                     disabled={testing === config.id}
                   >
-                    {testing === config.id ? (
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                    ) : (
-                      'Test'
-                    )}
+                    {testing === config.id ? <RefreshCw className="h-4 w-4 animate-spin" /> : "Test"}
                   </Button>
                   {!config.isActive && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => switchDatabase(config)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => switchDatabase(config)}>
                       Switch
                     </Button>
                   )}
                   {!config.isActive && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeConfig(config.id)}
-                    >
+                    <Button variant="destructive" size="sm" onClick={() => removeConfig(config.id)}>
                       Remove
                     </Button>
                   )}
@@ -299,9 +273,7 @@ const DatabaseConfiguration: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle>Add New Database Configuration</CardTitle>
-            <CardDescription>
-              Add a new Supabase database configuration
-            </CardDescription>
+            <CardDescription>Add a new Supabase database configuration</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
@@ -321,7 +293,7 @@ const DatabaseConfiguration: React.FC = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => window.open('https://supabase.com/dashboard', '_blank')}
+                        onClick={() => window.open("https://supabase.com/dashboard", "_blank")}
                         className="text-blue-700 border-blue-300 hover:bg-blue-100"
                       >
                         <ExternalLink className="h-4 w-4 mr-2" />
@@ -385,11 +357,24 @@ const DatabaseConfiguration: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm text-gray-600">
-            <p>• <strong>Switching databases:</strong> When you switch to a new database, the page will automatically refresh to apply the changes</p>
-            <p>• <strong>Test before switching:</strong> Always test the connection before switching to ensure the database is accessible</p>
-            <p>• <strong>Data isolation:</strong> Each database is completely separate - switching will show different data</p>
-            <p>• <strong>Local storage:</strong> Configurations are stored locally in your browser</p>
-            <p>• <strong>Security:</strong> Only use the anon public key, never your service role key</p>
+            <p>
+              • <strong>Switching databases:</strong> When you switch to a new database, the page will automatically
+              refresh to apply the changes
+            </p>
+            <p>
+              • <strong>Test before switching:</strong> Always test the connection before switching to ensure the
+              database is accessible
+            </p>
+            <p>
+              • <strong>Data isolation:</strong> Each database is completely separate - switching will show different
+              data
+            </p>
+            <p>
+              • <strong>Local storage:</strong> Configurations are stored locally in your browser
+            </p>
+            <p>
+              • <strong>Security:</strong> Only use the anon public key, never your service role key
+            </p>
           </div>
         </CardContent>
       </Card>
