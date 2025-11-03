@@ -70,18 +70,21 @@ const SetPassword = () => {
 
         const result = await response.json();
 
-        if (!response.ok || result.error) {
+        if (!response.ok || result.error || !result.invitation) {
           console.error("Token validation failed:", result.error);
           setError(result.error || "Invalid or expired invitation token.");
           setIsValidating(false);
           return;
         }
 
+        // Extract invitation data from nested object
+        const invitation = result.invitation;
+
         // Log comparison values for debugging
         console.log("Validation comparison:", {
           fromEdgeFunction: {
-            email: result.email,
-            organizationSlug: result.organization_slug,
+            email: invitation.email,
+            organizationSlug: invitation.organization_slug,
           },
           fromURL: {
             email: emailParam,
@@ -90,9 +93,9 @@ const SetPassword = () => {
         });
 
         // Normalize values for comparison (case-insensitive, trimmed)
-        const normalizedResultEmail = result.email?.toLowerCase().trim();
+        const normalizedResultEmail = invitation.email?.toLowerCase().trim();
         const normalizedParamEmail = emailParam?.toLowerCase().trim();
-        const normalizedResultSlug = result.organization_slug?.toLowerCase().trim();
+        const normalizedResultSlug = invitation.organization_slug?.toLowerCase().trim();
         const normalizedParamSlug = orgSlug?.toLowerCase().trim();
 
         // Verify the email and org slug match
@@ -107,15 +110,15 @@ const SetPassword = () => {
         }
 
         // Store all the data we need
-        setEmail(result.email);
-        setOrganizationSlug(result.organization_slug);
+        setEmail(invitation.email);
+        setOrganizationSlug(invitation.organization_slug);
         setInvitationToken(token);
         setOrganizationData({
-          id: result.organization_id,
-          name: result.organization_slug,
-          slug: result.organization_slug,
-          supabase_url: result.organization_supabase_url,
-          supabase_anon_key: result.organization_supabase_anon_key,
+          id: invitation.organization_id,
+          name: invitation.organization_slug,
+          slug: invitation.organization_slug,
+          supabase_url: invitation.organization_supabase_url,
+          supabase_anon_key: invitation.organization_supabase_anon_key,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });
