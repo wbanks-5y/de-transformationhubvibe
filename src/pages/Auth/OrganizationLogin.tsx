@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
+import { MANAGEMENT_URL } from "@/lib/supabase/management-client";
 
 const OrganizationLogin = () => {
   const { organizationSlug } = useParams();
@@ -52,9 +53,9 @@ const OrganizationLogin = () => {
     setIsLoading(true);
 
     try {
-      // Call man-authenticate edge function to authenticate server-side
+      // Call man-authenticate edge function on Management DB to authenticate server-side
       const response = await fetch(
-        'https://gvrxydwedhppmvppqwwm.supabase.co/functions/v1/man-authenticate',
+        `${MANAGEMENT_URL}/functions/v1/man-authenticate`,
         {
           method: 'POST',
           headers: {
