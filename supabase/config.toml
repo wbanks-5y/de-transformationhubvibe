@@ -68,6 +68,3 @@ verify_jwt = false
 
 [functions.resend-email-status]
 verify_jwt = false
-
-[functions.lookup-organization]
-verify_jwt = false
