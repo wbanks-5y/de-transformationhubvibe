@@ -77,8 +77,30 @@ const SetPassword = () => {
           return;
         }
 
+        // Log comparison values for debugging
+        console.log("Validation comparison:", {
+          fromEdgeFunction: {
+            email: result.email,
+            organizationSlug: result.organization_slug,
+          },
+          fromURL: {
+            email: emailParam,
+            organizationSlug: orgSlug,
+          }
+        });
+
+        // Normalize values for comparison (case-insensitive, trimmed)
+        const normalizedResultEmail = result.email?.toLowerCase().trim();
+        const normalizedParamEmail = emailParam?.toLowerCase().trim();
+        const normalizedResultSlug = result.organization_slug?.toLowerCase().trim();
+        const normalizedParamSlug = orgSlug?.toLowerCase().trim();
+
         // Verify the email and org slug match
-        if (result.email !== emailParam || result.organization_slug !== orgSlug) {
+        if (normalizedResultEmail !== normalizedParamEmail || normalizedResultSlug !== normalizedParamSlug) {
+          console.error("Mismatch detected:", {
+            email: { expected: normalizedParamEmail, received: normalizedResultEmail },
+            slug: { expected: normalizedParamSlug, received: normalizedResultSlug }
+          });
           setError("Invitation details do not match. Please use the correct link.");
           setIsValidating(false);
           return;
