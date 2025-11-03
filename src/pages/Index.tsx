@@ -37,9 +37,9 @@ const Index = () => {
     setSelectedOrgId("");
 
     try {
-      // Call secure edge function for organization lookup
+      // Call management database edge function for organization lookup
       const response = await fetch(
-        'https://fgbilpzuniuqrpetnbgz.supabase.co/functions/v1/lookup-organization',
+        'https://fgbilpzuniuqrpetnbgz.supabase.co/functions/v1/man-lookup-organization',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
