@@ -188,6 +188,7 @@ serve(async (req)=>{
     const fullName = safeEmail.split("@")[0].replace(/[._-]/g, " ").split(" ").map((word: string)=>word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
     const { error: profileError } = await orgAdminClient.from("profiles").upsert({
       id: userId,
+      email: safeEmail,
       full_name: fullName,
       status: "approved",
       tier: "essential",
