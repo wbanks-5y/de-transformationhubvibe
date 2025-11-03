@@ -37,14 +37,34 @@ const Index = () => {
     setSelectedOrgId("");
 
     try {
-      // Query management database to find user's organizations
-      // Use ilike for case-insensitive email matching
-      const { data: userOrgs, error: userOrgError } = await managementClient
-        .from('user_organizations')
-        .select('organization_id')
-        .ilike('email', email);
+      // Call secure edge function for organization lookup
+      const response = await fetch(
+        'https://fgbilpzuniuqrpetnbgz.supabase.co/functions/v1/lookup-organization',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        }
+      );
 
-      if (userOrgError || !userOrgs || userOrgs.length === 0) {
+      if (!response.ok) {
+        if (response.status === 429) {
+          const data = await response.json();
+          toast.error("Too many attempts", {
+            description: `Please try again in ${Math.ceil((data.retryAfter || 900) / 60)} minutes.`
+          });
+        } else {
+          toast.error("Organization lookup failed", {
+            description: "Please try again or contact support."
+          });
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      const { organizations: foundOrgs, error: lookupError } = await response.json();
+      
+      if (lookupError || !foundOrgs || foundOrgs.length === 0) {
         toast.error("Email not found", {
           description: "This email is not associated with any organization. Please contact your administrator."
         });
@@ -53,13 +73,12 @@ const Index = () => {
       }
 
       // If user belongs to multiple organizations
-      if (userOrgs.length > 1) {
-        // Fetch all organization details
-        const orgIds = userOrgs.map(uo => uo.organization_id);
+      if (foundOrgs.length > 1) {
+        // Fetch full organization details including credentials from management DB
         const { data: orgs, error: orgsError } = await managementClient
           .from('organizations')
           .select('*')
-          .in('id', orgIds);
+          .in('id', foundOrgs.map((o: any) => o.id));
 
         if (orgsError || !orgs || orgs.length === 0) {
           toast.error("Organizations not found", {
@@ -76,11 +95,11 @@ const Index = () => {
         return;
       }
 
-      // Single organization - auto-redirect (existing behavior)
+      // Single organization - fetch full details including credentials
       const { data: org, error: orgError } = await managementClient
         .from('organizations')
         .select('*')
-        .eq('id', userOrgs[0].organization_id)
+        .eq('id', foundOrgs[0].id)
         .single();
 
       if (orgError || !org) {
