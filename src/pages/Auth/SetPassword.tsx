@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useOrganization } from "@/context/OrganizationContext";
-import { managementClient } from "@/lib/supabase/management-client";
+import { MANAGEMENT_URL, MANAGEMENT_KEY } from "@/lib/supabase/management-client";
 
 const SetPassword = () => {
   const [password, setPassword] = useState("");
@@ -20,6 +20,15 @@ const SetPassword = () => {
   const [email, setEmail] = useState<string | null>(null);
   const [organizationSlug, setOrganizationSlug] = useState<string | null>(null);
   const [invitationToken, setInvitationToken] = useState<string | null>(null);
+  const [organizationData, setOrganizationData] = useState<{
+    id: string;
+    name: string;
+    slug: string;
+    supabase_url: string;
+    supabase_anon_key: string;
+    created_at: string;
+    updated_at: string;
+  } | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { setOrganizationWithCredentials } = useOrganization();
@@ -46,25 +55,50 @@ const SetPassword = () => {
           return;
         }
 
-        setEmail(emailParam);
-        setOrganizationSlug(orgSlug);
-        setInvitationToken(token);
+        // Call man-validate-invitation-token edge function
+        const response = await fetch(
+          `${MANAGEMENT_URL}/functions/v1/man-validate-invitation-token`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': MANAGEMENT_KEY,
+            },
+            body: JSON.stringify({ token }),
+          }
+        );
 
-        // Fetch organization details from management database
-        const { data: orgData, error: orgError } = await managementClient
-          .from("organizations")
-          .select("*")
-          .eq("slug", orgSlug)
-          .single();
+        const result = await response.json();
 
-        if (orgError || !orgData) {
-          console.error("Organization not found:", orgError);
-          setError("Organization not found. Please contact support.");
+        if (!response.ok || result.error) {
+          console.error("Token validation failed:", result.error);
+          setError(result.error || "Invalid or expired invitation token.");
           setIsValidating(false);
           return;
         }
 
-        console.log("Organization found, invitation validated successfully");
+        // Verify the email and org slug match
+        if (result.email !== emailParam || result.organization_slug !== orgSlug) {
+          setError("Invitation details do not match. Please use the correct link.");
+          setIsValidating(false);
+          return;
+        }
+
+        // Store all the data we need
+        setEmail(result.email);
+        setOrganizationSlug(result.organization_slug);
+        setInvitationToken(token);
+        setOrganizationData({
+          id: result.organization_id,
+          name: result.organization_slug,
+          slug: result.organization_slug,
+          supabase_url: result.organization_supabase_url,
+          supabase_anon_key: result.organization_supabase_anon_key,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+        console.log("Invitation validated successfully via edge function");
         setIsValidating(false);
       } catch (err) {
         console.error("Validation error:", err);
@@ -100,18 +134,13 @@ const SetPassword = () => {
     try {
       console.log("Completing invitation for:", email);
 
-      // Get org display/meta from management DB
-      const { data: orgData, error: orgError } = await managementClient
-        .from("organizations")
-        .select("*")
-        .eq("slug", organizationSlug)
-        .single();
-
-      if (orgError || !orgData) {
-        console.error("Organization not found:", orgError);
-        setError("Organization not found. Please contact support.");
+      // Use the organization data we already fetched during validation
+      if (!organizationData) {
+        setError("Organization data not available. Please refresh and try again.");
         return;
       }
+
+      const orgData = organizationData;
 
       // Call the edge function on the target org's project (secure) using direct fetch
       // Ensure the URL has the https:// protocol (management DB stores URLs without it)
