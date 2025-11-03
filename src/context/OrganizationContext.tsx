@@ -7,7 +7,8 @@ import { getOrganizationClient, clearOrganizationClient } from '@/lib/supabase/o
 interface OrganizationContextType {
   currentOrganization: Organization | null;
   organizationClient: SupabaseClient<Database> | null;
-  setOrganization: (org: Organization) => void;
+  setOrganizationBasic: (org: Partial<Organization>) => void;
+  setOrganizationWithCredentials: (org: Organization, session: any) => void;
   clearOrganization: () => void;
   updateOrganizationAuth: (accessToken?: string | null) => void;
 }
@@ -18,20 +19,33 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
   const [organizationClient, setOrganizationClient] = useState<SupabaseClient<Database> | null>(null);
 
-  const setOrganization = useCallback((org: Organization) => {
+  // Set organization basic info (no credentials) - used during lookup phase
+  const setOrganizationBasic = useCallback((org: Partial<Organization>) => {
+    setCurrentOrganization(org as Organization);
+    // No client created yet - credentials not available
+    setOrganizationClient(null);
+    
+    // Store basic organization info in localStorage
+    localStorage.setItem('current_organization_basic', JSON.stringify(org));
+  }, []);
+
+  // Set organization with full credentials after authentication
+  const setOrganizationWithCredentials = useCallback((org: Organization, session: any) => {
     setCurrentOrganization(org);
     
-    // Create/retrieve client for this organization's database without auth token initially
+    // Create client with authenticated session
     const client = getOrganizationClient(
       org.supabase_url,
       org.supabase_anon_key,
-      org.slug
+      org.slug,
+      session.access_token
     );
     
     setOrganizationClient(client);
     
-    // Store organization info in localStorage for persistence
+    // Store full organization info in localStorage for persistence
     localStorage.setItem('current_organization', JSON.stringify(org));
+    localStorage.removeItem('current_organization_basic');
   }, []);
 
   const updateOrganizationAuth = useCallback((accessToken?: string | null) => {
@@ -60,18 +74,26 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (stored) {
       try {
         const org = JSON.parse(stored) as Organization;
-        setOrganization(org);
+        // Restore with credentials if available
+        const client = getOrganizationClient(
+          org.supabase_url,
+          org.supabase_anon_key,
+          org.slug
+        );
+        setCurrentOrganization(org);
+        setOrganizationClient(client);
       } catch (error) {
         console.error('Failed to restore organization from storage:', error);
         localStorage.removeItem('current_organization');
       }
     }
-  }, [setOrganization]);
+  }, []);
 
   const value = {
     currentOrganization,
     organizationClient,
-    setOrganization,
+    setOrganizationBasic,
+    setOrganizationWithCredentials,
     clearOrganization,
     updateOrganizationAuth,
   };

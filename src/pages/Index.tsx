@@ -20,7 +20,7 @@ const Index = () => {
   const [selectedOrgId, setSelectedOrgId] = useState<string>("");
   const [showOrgSelector, setShowOrgSelector] = useState(false);
   const navigate = useNavigate();
-  const { setOrganization } = useOrganization();
+  const { setOrganizationBasic } = useOrganization();
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,11 +80,11 @@ const Index = () => {
         return;
       }
 
-      // Single organization - use data directly from edge function
+      // Single organization - use data directly from edge function (no credentials yet)
       const org = foundOrgs[0];
 
-      // Set the organization context
-      setOrganization(org as Organization);
+      // Set the organization context with basic info (no credentials)
+      setOrganizationBasic(org);
 
       // Redirect to organization-specific login
       navigate(`/auth/${org.slug}`, { state: { email } });
@@ -109,8 +109,8 @@ const Index = () => {
       return;
     }
 
-    // Set the organization context
-    setOrganization(selectedOrg);
+    // Set the organization context with basic info (no credentials)
+    setOrganizationBasic(selectedOrg);
 
     // Redirect to organization-specific login
     navigate(`/auth/${selectedOrg.slug}`, { state: { email } });

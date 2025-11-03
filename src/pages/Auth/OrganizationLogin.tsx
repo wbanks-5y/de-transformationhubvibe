@@ -11,7 +11,7 @@ const OrganizationLogin = () => {
   const { organizationSlug } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentOrganization, organizationClient } = useOrganization();
+  const { currentOrganization, setOrganizationWithCredentials } = useOrganization();
   
   const [email, setEmail] = useState(location.state?.email || "");
   const [password, setPassword] = useState("");
@@ -19,7 +19,7 @@ const OrganizationLogin = () => {
 
   useEffect(() => {
     // Verify we have an organization context
-    if (!currentOrganization || !organizationClient) {
+    if (!currentOrganization) {
       toast.error("Organization not found", {
         description: "Please start from the beginning."
       });
@@ -33,7 +33,7 @@ const OrganizationLogin = () => {
       navigate("/");
       return;
     }
-  }, [currentOrganization, organizationClient, organizationSlug, navigate]);
+  }, [currentOrganization, organizationSlug, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +43,7 @@ const OrganizationLogin = () => {
       return;
     }
 
-    if (!organizationClient) {
+    if (!currentOrganization?.slug) {
       toast.error("Organization not initialized");
       navigate("/");
       return;
@@ -52,23 +52,41 @@ const OrganizationLogin = () => {
     setIsLoading(true);
 
     try {
-      // Authenticate against the organization's specific database
-      const { data, error } = await organizationClient.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // Call man-authenticate edge function to authenticate server-side
+      const response = await fetch(
+        'https://gvrxydwedhppmvppqwwm.supabase.co/functions/v1/man-authenticate',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            password,
+            organizationSlug: currentOrganization.slug,
+          }),
+        }
+      );
 
-      if (error) {
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
         toast.error("Login failed", {
-          description: error.message
+          description: result.error || "Please check your credentials"
         });
         setIsLoading(false);
         return;
       }
 
-      if (data.user) {
-        toast.success(`Welcome to ${currentOrganization?.name}!`);
-        // Navigation will be handled by auth state change
+      // Authentication successful - now we have credentials
+      if (result.success && result.session && result.organization) {
+        // Set organization with full credentials and establish direct client connection
+        setOrganizationWithCredentials(result.organization, result.session);
+        
+        toast.success(`Welcome to ${result.organization.name}!`);
+        
+        // Navigate to dashboard
+        navigate('/dashboard');
       }
     } catch (error: any) {
       console.error("Login error:", error);

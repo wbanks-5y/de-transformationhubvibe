@@ -22,7 +22,7 @@ const SetPassword = () => {
   const [invitationToken, setInvitationToken] = useState<string | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { setOrganization, updateOrganizationAuth } = useOrganization();
+  const { setOrganizationWithCredentials } = useOrganization();
 
   // Use your app project (where edge functions are deployed)
   const appSupabase = useMemo(() => {
@@ -154,21 +154,19 @@ const SetPassword = () => {
         return;
       }
 
-      // Set organization context (from management DB)
-      setOrganization({
-        id: orgData.id,
-        name: orgData.name,
-        slug: organizationSlug,
-        supabase_url: completeData.orgUrl || orgData.supabase_url, // prefer function response
-        supabase_anon_key: completeData.orgAnonKey || orgData.supabase_anon_key,
-        created_at: orgData.created_at,
-        updated_at: orgData.updated_at,
-      });
-
-      // Authenticate org client with the returned access token
-      if (completeData.accessToken) {
-        updateOrganizationAuth(completeData.accessToken);
-      }
+      // Set organization context with full credentials and session
+      setOrganizationWithCredentials(
+        {
+          id: orgData.id,
+          name: orgData.name,
+          slug: organizationSlug,
+          supabase_url: completeData.orgUrl || orgData.supabase_url,
+          supabase_anon_key: completeData.orgAnonKey || orgData.supabase_anon_key,
+          created_at: orgData.created_at,
+          updated_at: orgData.updated_at,
+        },
+        { access_token: completeData.accessToken }
+      );
 
       console.log("Invitation completed, redirecting to home...");
       toast.success("Password set successfully! Welcome to Transformation Suite!");
