@@ -155,7 +155,7 @@ const SetPassword = () => {
       }
 
       // Set organization context with full credentials and session
-      setOrganizationWithCredentials(
+      await setOrganizationWithCredentials(
         {
           id: orgData.id,
           name: orgData.name,
@@ -165,7 +165,7 @@ const SetPassword = () => {
           created_at: orgData.created_at,
           updated_at: orgData.updated_at,
         },
-        { access_token: completeData.accessToken }
+        { access_token: completeData.accessToken, refresh_token: completeData.refreshToken || completeData.accessToken }
       );
 
       console.log("Invitation completed, redirecting to home...");

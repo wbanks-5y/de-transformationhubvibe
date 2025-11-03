@@ -2,13 +2,13 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 import type { Organization } from '@/types/management';
-import { getOrganizationClient, clearOrganizationClient } from '@/lib/supabase/organization-client';
+import { getOrganizationClient, getOrganizationClientWithSession, clearOrganizationClient } from '@/lib/supabase/organization-client';
 
 interface OrganizationContextType {
   currentOrganization: Organization | null;
   organizationClient: SupabaseClient<Database> | null;
   setOrganizationBasic: (org: Partial<Organization>) => void;
-  setOrganizationWithCredentials: (org: Organization, session: any) => void;
+  setOrganizationWithCredentials: (org: Organization, session: any) => Promise<void>;
   clearOrganization: () => void;
   updateOrganizationAuth: (accessToken?: string | null) => void;
 }
@@ -30,15 +30,15 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, []);
 
   // Set organization with full credentials after authentication
-  const setOrganizationWithCredentials = useCallback((org: Organization, session: any) => {
+  const setOrganizationWithCredentials = useCallback(async (org: Organization, session: any) => {
     setCurrentOrganization(org);
     
-    // Create client with authenticated session
-    const client = getOrganizationClient(
+    // Create client with authenticated session properly set
+    const client = await getOrganizationClientWithSession(
       org.supabase_url,
       org.supabase_anon_key,
       org.slug,
-      session.access_token
+      session
     );
     
     setOrganizationClient(client);

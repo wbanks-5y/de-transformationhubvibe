@@ -50,6 +50,29 @@ export const getOrganizationClient = (
 };
 
 /**
+ * Creates an organization client and sets the session explicitly
+ * This ensures the session is properly stored in the client's auth state
+ */
+export const getOrganizationClientWithSession = async (
+  supabaseUrl: string,
+  supabaseAnonKey: string,
+  organizationSlug: string,
+  session: { access_token: string; refresh_token: string }
+): Promise<SupabaseClient<Database>> => {
+  // Create client without access token first
+  const client = getOrganizationClient(supabaseUrl, supabaseAnonKey, organizationSlug);
+  
+  // Set the session explicitly in the client's auth state
+  // This properly stores the session and triggers onAuthStateChange
+  await client.auth.setSession({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token
+  });
+  
+  return client;
+};
+
+/**
  * Clears a specific organization's client from cache
  */
 export const clearOrganizationClient = (organizationSlug: string) => {

@@ -82,7 +82,7 @@ const OrganizationLogin = () => {
       // Authentication successful - now we have credentials
       if (result.success && result.session && result.organization) {
         // Set organization with full credentials and establish direct client connection
-        setOrganizationWithCredentials(result.organization, result.session);
+        await setOrganizationWithCredentials(result.organization, result.session);
         
         toast.success(`Welcome to ${result.organization.name}!`);
         
