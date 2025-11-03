@@ -987,7 +987,6 @@ export type Database = {
           email: string
           expires_at: string
           id: string
-          invited_by: string | null
           organization_id: string | null
           organization_slug: string
           organization_supabase_anon_key: string
@@ -995,14 +994,12 @@ export type Database = {
           token: string
           updated_at: string | null
           used_at: string | null
-          user_id: string | null
         }
         Insert: {
           created_at?: string | null
           email: string
           expires_at?: string
           id?: string
-          invited_by?: string | null
           organization_id?: string | null
           organization_slug: string
           organization_supabase_anon_key: string
@@ -1010,14 +1007,12 @@ export type Database = {
           token?: string
           updated_at?: string | null
           used_at?: string | null
-          user_id?: string | null
         }
         Update: {
           created_at?: string | null
           email?: string
           expires_at?: string
           id?: string
-          invited_by?: string | null
           organization_id?: string | null
           organization_slug?: string
           organization_supabase_anon_key?: string
@@ -1025,7 +1020,6 @@ export type Database = {
           token?: string
           updated_at?: string | null
           used_at?: string | null
-          user_id?: string | null
         }
         Relationships: [
           {
@@ -3456,6 +3450,13 @@ export type Database = {
             referencedRelation: "roles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_sessions: {
@@ -3518,10 +3519,6 @@ export type Database = {
     }
     Functions: {
       automated_security_response: { Args: never; Returns: undefined }
-      bootstrap_first_admin: {
-        Args: { target_email: string }
-        Returns: boolean
-      }
       calculate_trend_percentage: {
         Args: { current_val: number; previous_val: number }
         Returns: number
@@ -3657,7 +3654,6 @@ export type Database = {
         Args: { target_email: string }
         Returns: boolean
       }
-      test_function: { Args: never; Returns: string }
       update_encrypted_api_key_secure: {
         Args: {
           p_created_by: string
