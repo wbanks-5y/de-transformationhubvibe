@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { managementClient } from "@/lib/supabase/management-client";
 import { useOrganization } from "@/context/OrganizationContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,41 +73,15 @@ const Index = () => {
 
       // If user belongs to multiple organizations
       if (foundOrgs.length > 1) {
-        // Fetch full organization details including credentials from management DB
-        const { data: orgs, error: orgsError } = await managementClient
-          .from('organizations')
-          .select('*')
-          .in('id', foundOrgs.map((o: any) => o.id));
-
-        if (orgsError || !orgs || orgs.length === 0) {
-          toast.error("Organizations not found", {
-            description: "Unable to load organization details. Please contact support."
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        // Show organization selector
-        setOrganizations(orgs as Organization[]);
+        // Show organization selector with data from edge function
+        setOrganizations(foundOrgs as Organization[]);
         setShowOrgSelector(true);
         setIsLoading(false);
         return;
       }
 
-      // Single organization - fetch full details including credentials
-      const { data: org, error: orgError } = await managementClient
-        .from('organizations')
-        .select('*')
-        .eq('id', foundOrgs[0].id)
-        .single();
-
-      if (orgError || !org) {
-        toast.error("Organization not found", {
-          description: "Unable to load organization details. Please contact support."
-        });
-        setIsLoading(false);
-        return;
-      }
+      // Single organization - use data directly from edge function
+      const org = foundOrgs[0];
 
       // Set the organization context
       setOrganization(org as Organization);
