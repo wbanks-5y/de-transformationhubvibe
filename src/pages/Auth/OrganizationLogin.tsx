@@ -86,8 +86,10 @@ const OrganizationLogin = () => {
         
         toast.success(`Welcome to ${result.organization.name}!`);
         
-        // Navigate to dashboard
-        navigate('/dashboard');
+        // Allow auth state to propagate before navigation
+        setTimeout(() => {
+          navigate('/home');
+        }, 100);
       }
     } catch (error: any) {
       console.error("Login error:", error);
