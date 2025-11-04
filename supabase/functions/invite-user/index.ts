@@ -413,7 +413,6 @@ const handler = async (req: Request) => {
             invitationLink,
             resendEmailId,
             correlationId,
-            sendPath: resendEmailId ? (forceFallback ? "fallback" : "primary") : undefined,
           }),
           {
             status: 200,
