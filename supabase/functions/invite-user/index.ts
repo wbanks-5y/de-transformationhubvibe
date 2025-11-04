@@ -168,7 +168,7 @@ const handler = async (req: Request) => {
           },
         );
       }
-      const { email, organizationSlug, forceFallback = true, cc = [] } = requestData;
+      const { email, organizationSlug, cc = [] } = requestData;
       if (!email || typeof email !== "string") {
         return new Response(
           JSON.stringify({
@@ -330,7 +330,6 @@ const handler = async (req: Request) => {
         if (resendApiKey) {
           try {
             console.log(`[${correlationId}] POST: Sending invitation email via Resend`, {
-              forceFallback,
               hasCc: cc.length > 0,
             });
             const emailSubject = `You're invited to join ${orgData.name || orgData.slug}`;
@@ -359,18 +358,14 @@ const handler = async (req: Request) => {
               </body>
               </html>
             `;
-            const primaryFrom = "5Y Technology <noreply@5ytest.com>";
-            const fallbackFrom = "Transformation Suite <onboarding@resend.dev>";
-            const fromAddress = forceFallback ? fallbackFrom : primaryFrom;
-            let sendPath = forceFallback ? "fallback" : "primary";
-            console.log(`[${correlationId}] POST: Using ${sendPath} sender: ${fromAddress}`);
+            const fromAddress = "5Y Technology <noreply@5ytest.com>";
+            console.log(`[${correlationId}] POST: Using sender: ${fromAddress}`);
             const emailPayload: {
               from: string;
               to: string[];
               subject: string;
               text: string;
               html: string;
-              reply_to?: string;
               cc?: string[];
             } = {
               from: fromAddress,
@@ -379,9 +374,6 @@ const handler = async (req: Request) => {
               text: emailTextContent,
               html: emailHtmlContent,
             };
-            if (forceFallback) {
-              emailPayload.reply_to = "noreply@5ytest.com";
-            }
             if (cc.length > 0) {
               emailPayload.cc = cc;
               console.log(`[${correlationId}] POST: Adding CC recipients:`, cc);
@@ -395,43 +387,7 @@ const handler = async (req: Request) => {
               body: JSON.stringify(emailPayload),
             });
             let resendBody = await resendResponse.json().catch(() => null);
-            console.log(`[${correlationId}] POST: ${sendPath} Resend response (${resendResponse.status}):`, resendBody);
-            // If primary domain fails with 4xx and we didn't force fallback, try fallback
-            if (!forceFallback && !resendResponse.ok && resendResponse.status >= 400 && resendResponse.status < 500) {
-              console.log(
-                `[${correlationId}] POST: Primary send failed (${resendResponse.status}). Attempting automatic fallback...`,
-              );
-              sendPath = "fallback";
-              const fallbackPayload: {
-                from: string;
-                reply_to: string;
-                to: string[];
-                subject: string;
-                text: string;
-                html: string;
-                cc?: string[];
-              } = {
-                from: fallbackFrom,
-                reply_to: "noreply@5ytest.com",
-                to: [emailNormalized],
-                subject: emailSubject,
-                text: emailTextContent,
-                html: emailHtmlContent,
-              };
-              if (cc.length > 0) {
-                fallbackPayload.cc = cc;
-              }
-              resendResponse = await fetch("https://api.resend.com/emails", {
-                method: "POST",
-                headers: {
-                  Authorization: `Bearer ${resendApiKey}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify(fallbackPayload),
-              });
-              resendBody = await resendResponse.json().catch(() => null);
-              console.log(`[${correlationId}] POST: Fallback Resend response (${resendResponse.status}):`, resendBody);
-            }
+            console.log(`[${correlationId}] POST: Resend response (${resendResponse.status}):`, resendBody);
             if (!resendResponse.ok) {
               console.error(
                 `[${correlationId}] POST: Resend email failed with status ${resendResponse.status}. Body:`,
@@ -440,7 +396,7 @@ const handler = async (req: Request) => {
             } else {
               resendEmailId = resendBody?.id || null;
               console.log(
-                `[${correlationId}] POST: Resend email sent successfully via ${sendPath}. Email ID: ${resendEmailId}`,
+                `[${correlationId}] POST: Resend email sent successfully. Email ID: ${resendEmailId}`,
               );
             }
           } catch (resendError) {
