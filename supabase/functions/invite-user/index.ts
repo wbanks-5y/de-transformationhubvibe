@@ -168,7 +168,7 @@ const handler = async (req: Request) => {
           },
         );
       }
-      const { email, organizationSlug, forceFallback = false, cc = [] } = requestData;
+      const { email, organizationSlug, forceFallback = true, cc = [] } = requestData;
       if (!email || typeof email !== "string") {
         return new Response(
           JSON.stringify({
