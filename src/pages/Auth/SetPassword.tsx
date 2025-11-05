@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { createClient } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,13 +31,6 @@ const SetPassword = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { setOrganizationWithCredentials } = useOrganization();
-
-  // Use your app project (where edge functions are deployed)
-  const appSupabase = useMemo(() => {
-    const url = import.meta.env.VITE_SUPABASE_URL as string;
-    const anon = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-    return createClient(url, anon);
-  }, []);
 
   useEffect(() => {
     const validateInvitation = async () => {
