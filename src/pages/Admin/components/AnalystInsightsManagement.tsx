@@ -7,12 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, ExternalLink, Sparkles, Loader2, Check, X, Clock } from "lucide-react";
 import { useAnalystInsights } from "@/hooks/useAnalystInsights";
 import { useDeleteAnalystInsight, useApproveAnalystInsight, useRejectAnalystInsight } from "@/hooks/useAnalystInsightsAdmin";
-import { supabase } from "@/integrations/supabase/client";
+import { useOrganization } from "@/context/OrganizationContext";
 import { toast } from "sonner";
 import AnalystInsightForm from "./AnalystInsightForm";
 
 const AnalystInsightsManagement: React.FC = () => {
   const { data: insights = [], isLoading } = useAnalystInsights();
+  const { organizationClient } = useOrganization();
   const queryClient = useQueryClient();
   const deleteInsight = useDeleteAnalystInsight();
   const approveInsight = useApproveAnalystInsight();
@@ -53,11 +54,16 @@ const AnalystInsightsManagement: React.FC = () => {
   };
 
   const handleGeneratePestleAnalysis = async () => {
+    if (!organizationClient) {
+      toast.error('No organization connection available');
+      return;
+    }
+    
     setIsGeneratingPestle(true);
     try {
       console.log('Starting PESTLE analysis generation...');
       
-      const { data, error } = await supabase.functions.invoke('generate-pestle-insights', {
+      const { data, error } = await organizationClient.functions.invoke('generate-pestle-insights', {
         body: { 
           analysisType: 'pestle',
           includeCompanyData: true
