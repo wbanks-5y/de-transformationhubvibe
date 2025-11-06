@@ -12,11 +12,13 @@ import { Lightbulb, RefreshCw, AlertTriangle } from "lucide-react";
 import { getIconByName } from "@/utils/iconUtils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import { useOrganization } from "@/context/OrganizationContext";
 import type { HomeModuleCard } from "./home/types";
 
 const HomeScreen = () => {
   const navigate = useNavigate();
   const { user, session, loading: authLoading } = useAuth();
+  const { currentOrganization } = useOrganization();
   
   const { data: cockpitAggregates, isLoading: aggregatesLoading, error: aggregatesError, refetch } = useHomeCockpitAggregates();
   const cockpitModules = useCockpitModules();
@@ -200,7 +202,15 @@ const HomeScreen = () => {
     <div className="container mx-auto px-4 py-10">
       <LogoHeader />
       
-      <BusinessAreaChart 
+      {currentOrganization?.name && (
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-jakarta font-semibold text-foreground">
+            {currentOrganization.name}
+          </h2>
+        </div>
+      )}
+      
+      <BusinessAreaChart
         ringData={ringData} 
         modules={allModulesForChart} 
       />

@@ -10,6 +10,7 @@ import { Lightbulb, RefreshCw, AlertTriangle } from "lucide-react";
 import { getIconByName } from "@/utils/iconUtils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import { useOrganization } from "@/context/OrganizationContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { HomeModuleCard } from "./home/types";
 import { RingData } from "./RingChart";
@@ -27,6 +28,7 @@ const ChartSkeleton = () => (
 const OptimizedHomeScreen = () => {
   const navigate = useNavigate();
   const { user, session, loading: authLoading } = useAuth();
+  const { currentOrganization } = useOrganization();
   
   const { data: cockpitAggregates, isLoading: aggregatesLoading, error: aggregatesError, refetch } = useOptimizedHomeCockpitAggregates();
   const cockpitModules = useCockpitModules();
@@ -195,6 +197,14 @@ const OptimizedHomeScreen = () => {
   return (
     <div className="container mx-auto px-4 py-10">
       <LogoHeader />
+      
+      {currentOrganization?.name && (
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-jakarta font-semibold text-foreground">
+            {currentOrganization.name}
+          </h2>
+        </div>
+      )}
       
       {/* Progressive loading: Show chart with lazy loading and skeleton */}
       <Suspense fallback={<ChartSkeleton />}>
