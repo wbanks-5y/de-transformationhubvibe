@@ -39,6 +39,7 @@ import {
   assignRoleToUser,
   removeRoleFromUser
 } from "@/lib/supabase/roles";
+import { useOrganization } from "@/context/OrganizationContext";
 
 interface Role {
   id: string;
@@ -60,6 +61,7 @@ const AVAILABLE_ROLES = [
 ];
 
 const RoleManagement = () => {
+  const { organizationClient } = useOrganization();
   const [usersWithRoles, setUsersWithRoles] = useState<UserWithRoles[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -67,9 +69,14 @@ const RoleManagement = () => {
   const [selectedRole, setSelectedRole] = useState<string>("");
 
   const fetchData = async () => {
+    if (!organizationClient) {
+      toast.error("No organization connected");
+      return;
+    }
+
     try {
       setLoading(true);
-      const usersData = await getUsersWithRoles();
+      const usersData = await getUsersWithRoles(organizationClient);
       setUsersWithRoles(usersData);
     } catch (error) {
       toast.error("Failed to fetch user data");
@@ -89,8 +96,13 @@ const RoleManagement = () => {
       return;
     }
 
+    if (!organizationClient) {
+      toast.error("No organization connected");
+      return;
+    }
+
     try {
-      const result = await assignRoleToUser(selectedUserId, selectedRole);
+      const result = await assignRoleToUser(selectedUserId, selectedRole, organizationClient);
       if (result) {
         toast.success("Role assigned successfully");
         await fetchData();
@@ -105,8 +117,13 @@ const RoleManagement = () => {
   };
 
   const handleRemoveRole = async (userId: string, roleId: string) => {
+    if (!organizationClient) {
+      toast.error("No organization connected");
+      return;
+    }
+
     try {
-      const success = await removeRoleFromUser(userId, roleId);
+      const success = await removeRoleFromUser(userId, roleId, organizationClient);
       if (success) {
         toast.success("Role removed successfully");
         await fetchData();
