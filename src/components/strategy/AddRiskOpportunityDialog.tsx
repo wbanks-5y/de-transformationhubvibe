@@ -21,7 +21,7 @@ const riskOpportunitySchema = z.object({
   probability: z.enum(['low', 'medium', 'high'], {
     required_error: "Probability is required"
   }),
-  status: z.enum(['identified', 'assessing', 'mitigating', 'monitoring', 'closed']),
+  status: z.enum(['identified', 'assessed', 'mitigated', 'closed']),
   owner: z.string().trim().max(100, "Owner name too long"),
   mitigation_actions: z.string().trim()
 });
@@ -60,11 +60,11 @@ const AddRiskOpportunityDialog: React.FC<AddRiskOpportunityDialogProps> = ({
     
     const statusMap: Record<string, string> = {
       'identified': 'identified',
-      'assessing': 'assessing',
-      'assessed': 'assessing',  // Legacy value
-      'mitigating': 'mitigating',
-      'mitigated': 'mitigating',  // Legacy value
-      'monitoring': 'monitoring',
+      'assessed': 'assessed',
+      'assessing': 'assessed',     // Legacy 5-value → 4-value
+      'mitigated': 'mitigated',
+      'mitigating': 'mitigated',   // Legacy 5-value → 4-value
+      'monitoring': 'mitigated',   // Legacy 5-value → 4-value (closest match)
       'closed': 'closed'
     };
     
@@ -253,9 +253,8 @@ const AddRiskOpportunityDialog: React.FC<AddRiskOpportunityDialogProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="identified">Identified</SelectItem>
-                  <SelectItem value="assessing">Assessing</SelectItem>
-                  <SelectItem value="mitigating">Mitigating</SelectItem>
-                  <SelectItem value="monitoring">Monitoring</SelectItem>
+                  <SelectItem value="assessed">Assessed</SelectItem>
+                  <SelectItem value="mitigated">Mitigated</SelectItem>
                   <SelectItem value="closed">Closed</SelectItem>
                 </SelectContent>
               </Select>

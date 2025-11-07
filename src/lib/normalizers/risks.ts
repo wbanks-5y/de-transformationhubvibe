@@ -5,11 +5,11 @@
 export const normalizeStatus = (status: string): string => {
   const statusMap: Record<string, string> = {
     'identified': 'identified',
-    'assessing': 'assessing',
-    'assessed': 'assessing',  // Legacy mapping
-    'mitigating': 'mitigating',
-    'mitigated': 'mitigating',  // Legacy mapping
-    'monitoring': 'monitoring',
+    'assessed': 'assessed',
+    'assessing': 'assessed',     // Legacy 5-value → 4-value
+    'mitigated': 'mitigated',
+    'mitigating': 'mitigated',   // Legacy 5-value → 4-value
+    'monitoring': 'mitigated',   // Legacy 5-value → 4-value (closest match)
     'closed': 'closed'
   };
   
